@@ -68,8 +68,8 @@
   <div>
     <img class="logo" src="images/Logo UiTM- WHITE.png" alt="UiTM Logo" />
     <ul>
-      <li><a href="StudentDashboardServlet">Dashboard</a></li>
-      <li><a href="EventListServlet">Event List</a></li>
+      <li><a href="studentDashboard.jsp">Dashboard</a></li>
+      <li><a href="studentEventList.jsp">Event List</a></li>
       <li><a href="RegisterEventServlet">Register for Event</a></li>
       <li><a href="CertificateServlet">My Certificates</a></li>
       <li><a href="MyRegistrationsServlet">Registration History</a></li>
