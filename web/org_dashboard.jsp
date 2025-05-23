@@ -11,29 +11,28 @@
       margin: 0;
       font-family: Arial, sans-serif;
       display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
     .sidebar {
       background-color: #4b2e83;
       color: white;
       width: 220px;
-      height: 95vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       padding: 20px;
     }
     .sidebar .logo {
-       margin-top: 10px;  
-       margin-left: 10px;
-       display: block;
-       margin: 20px auto;
-       width: 180px; 
-     }
-
-    .sidebar img {
-      width: 100%;
-      margin-bottom: 20px;
+      margin: 10px auto 20px;
+      display: block;
+      width: 180px;
     }
     .sidebar ul {
       list-style-type: none;
       padding: 0;
+      flex-grow: 1;
     }
     .sidebar ul li a {
       display: block;
@@ -44,10 +43,16 @@
     .sidebar ul li a:hover {
       background-color: #321b5c;
     }
+    .sidebar .bottom-links {
+      padding-top: 20px;
+      border-top: 1px solid #6c5b7b;
+      margin-bottom: 20px;
+    }
     .main-content {
       flex-grow: 1;
       padding: 30px;
       background-color: #f5f6fa;
+      overflow-y: auto;
     }
     .summary-cards {
       display: flex;
@@ -115,19 +120,24 @@
 </head>
 <body>
   <div class="sidebar">
-    <img class="logo" src="images/Logo UiTM- WHITE.png" alt="UiTM Logo">
-    <ul>
-      <li><a href="OrgDashboardServlet">Dashboard</a></li>
-      <li><a href="ListEventsServlet">Events</a></li>
-      <li><a href="CreateEventServlet">Create Event</a></li>
-      <li><a href="ListParticipantsServlet">List Participant</a></li>
-      <li><a href="CertificatesServlet">Certificates</a></li>
-      <li><a href="FeedbackServlet">Feedback</a></li>
-      <li><a href="ReportsServlet">Report</a></li>
-      <li><a href="VenuesServlet">Venue Department</a></li>
-      <li><a href="ResourcesServlet">Resources Department</a></li>
-      <li><a href="ProfileServlet style">Profile</a></li>
-    </ul>
+    <div>
+      <img class="logo" src="images/Logo UiTM- WHITE.png" alt="UiTM Logo">
+      <ul>
+        <li><a href="OrgDashboardServlet">Dashboard</a></li>
+        <li><a href="ListEventsServlet">Events</a></li>
+        <li><a href="CreateEventServlet">Create Event</a></li>
+        <li><a href="ListParticipantsServlet">List Participant</a></li>
+        <li><a href="CertificatesServlet">Certificates</a></li>
+        <li><a href="FeedbackServlet">Feedback</a></li>
+        <li><a href="ReportsServlet">Report</a></li>
+        <li><a href="VenuesServlet">Venue Department</a></li>
+        <li><a href="ResourcesServlet">Resources Department</a></li>
+        <li><a href="ProfileServlet">Profile</a></li>
+      </ul>
+    </div>
+    <div class="bottom-links">
+      <a href="LogoutServlet" style="color:white; text-decoration:none; display:block; padding:10px;">Logout</a>
+    </div>
   </div>
   <div class="main-content">
     <h1>Organization Dashboard</h1>
