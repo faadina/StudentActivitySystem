@@ -11,14 +11,19 @@
     }
 
     .sidebar {
-      background-color: #4b2e83;
-      color: white;
-      width: 220px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-    }
+        background-color: #4b2e83;
+        color: white;
+        width: 220px; 
+        min-width: 220px; 
+        max-width: 250px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
 
     .sidebar .logo {
       display: block;
@@ -46,6 +51,16 @@
     .sidebar .bottom-links {
       padding-top: 20px;
       border-top: 1px solid #6c5b7b;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      color: #4b2e83;
     }
 </style>
 
