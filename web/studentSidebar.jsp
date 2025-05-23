@@ -72,7 +72,7 @@
       <li><a href="studentEventList.jsp">Event List</a></li>
       <li><a href="RegisterEventServlet">Register for Event</a></li>
       <li><a href="CertificateServlet">My Certificates</a></li>
-      <li><a href="MyRegistrationsServlet">Registration History</a></li>
+      <li><a href="studentRegistrationList.jsp">Registration History</a></li>
       <li><a href="studentFeedback.jsp">Feedback</a></li>
     </ul>
   </div>
