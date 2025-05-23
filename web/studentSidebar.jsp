@@ -73,7 +73,7 @@
       <li><a href="RegisterEventServlet">Register for Event</a></li>
       <li><a href="CertificateServlet">My Certificates</a></li>
       <li><a href="MyRegistrationsServlet">Registration History</a></li>
-      <li><a href="FeedbackFormServlet">Feedback</a></li>
+      <li><a href="studentFeedback.jsp">Feedback</a></li>
     </ul>
   </div>
   <div class="bottom-links">
