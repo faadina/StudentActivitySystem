@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login</title>
+  <title>Sign In</title>
     <style>
       body {
         font-family: Arial, sans-serif;

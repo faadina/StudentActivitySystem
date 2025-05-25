@@ -70,8 +70,8 @@
     <ul>
       <li><a href="studentDashboard.jsp">Dashboard</a></li>
       <li><a href="studentEventList.jsp">Event List</a></li>
-      <li><a href="RegisterEventServlet">Register for Event</a></li>
-      <li><a href="CertificateServlet">My Certificates</a></li>
+      <li><a href="studentRegisterEvent.jsp">Register for Event</a></li>
+      <li><a href="studentCertificate.jsp">My Certificates</a></li>
       <li><a href="studentRegistrationList.jsp">Registration History</a></li>
       <li><a href="studentFeedback.jsp">Feedback</a></li>
     </ul>

@@ -6,17 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Event</title>
   <style>
-      
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f9f9fb;
+    }
+
     .main-content {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 20px 30px;
-      height: auto;
+      padding: 30px;
       min-height: 100vh;
     }
-    
+
     .form-container {
       background: white;
       padding: 30px;
@@ -25,9 +29,6 @@
       width: 100%;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
-      max-height: none; 
-      overflow: hiddem; 
-      margin-top: 0px;
     }
 
     form {
@@ -52,6 +53,7 @@
       padding: 8px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      box-sizing: border-box;
     }
 
     form textarea {
@@ -73,10 +75,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-
-    .file-upload input {
-      border: none;
     }
 
     .submit-btn {
@@ -125,8 +123,8 @@
 
   <jsp:include page="orgSidebar.jsp" />
   <div class="main-content">
-      <h1>Create Event</h1>
-      
+    <h1>Create Event</h1>
+
     <div class="form-container">
       <form action="CreateEventServlet" method="post" enctype="multipart/form-data">
         <div class="full-width">
@@ -138,6 +136,7 @@
           <label for="date">Date</label>
           <input type="date" id="date" name="date" required />
         </div>
+
         <div>
           <label for="time">Time</label>
           <input type="time" id="time" name="time" required />
@@ -178,9 +177,9 @@
         </div>
 
         <div class="full-width">
-          <label for="paperwork">Paperwork <small>(max: 2MB)</small></label>
+          <label for="paperwork">Paperwork <small>(PDF only, max 2MB)</small></label>
           <div class="file-upload">
-            <input type="file" id="paperwork" name="paperwork" accept=".pdf,.doc,.docx" required />
+            <input type="file" id="paperwork" name="paperwork" accept=".pdf" required />
           </div>
         </div>
 

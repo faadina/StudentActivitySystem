@@ -98,7 +98,7 @@
     <div class="left-box">
       <h2>Hello !</h2>
       <p>Already have an account?<br>Sign in now!</p>
-      <button onclick="window.location.href='login.html'">SIGN IN</button>
+      <button onclick="window.location.href='login.jsp'">SIGN IN</button>
     </div>
 
     <div class="right-box">
