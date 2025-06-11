@@ -120,7 +120,7 @@
 </head>
 <body>
 
-<jsp:include page="admSidebar.jsp" />
+<jsp:include page="adminSidebar.jsp" />
 
 <div class="main-content">
     <h1>Welcome, ${adminName}!</h1>

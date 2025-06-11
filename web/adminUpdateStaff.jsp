@@ -156,7 +156,7 @@
 </head>
 <body>
 
-<jsp:include page="admSidebar.jsp" />
+<jsp:include page="adminSidebar.jsp" />
 
 <div class="main-content">
     <div class="container">
@@ -208,7 +208,7 @@
                 </div>
 
                 <div class="button-group">
-                    <a href="ADMINliststaff.jsp" class="btn btn-back">Back</a>
+                    <a href="adminListStaff.jsp" class="btn btn-back">Back</a>
                     <button type="submit" class="btn btn-update">Update</button>
                 </div>
             </form>

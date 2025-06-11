@@ -97,23 +97,34 @@
   <div class="container">
     <div class="right-box">
       <h2>Sign in</h2>
-
-      <!-- Show error message if login fails -->
+ <%-- Display error or success messages --%>
       <%
         String error = request.getParameter("error");
+        String register = request.getParameter("register");
         if ("invalid".equals(error)) {
       %>
-        <p style="color: red;">Invalid email or password.</p>
+        <div class="error-message">Invalid email or password.</div>
+      <%
+        } else if ("unauthorized".equals(error)) {
+      %>
+        <div class="error-message">Please login to continue.</div>
+      <%
+        } else if ("forbidden".equals(error)) {
+      %>
+        <div class="error-message">Access denied for your role.</div>
+      <%
+        } else if ("success".equals(register)) {
+      %>
+        <div class="success-message">Registration successful. Please log in.</div>
       <%
         }
       %>
 
-        <form action="loginController" method="post">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <input type="submit" value="SIGN IN">
-        </form>
-
+      <form action="signinController" method="post">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="submit" value="SIGN IN">
+      </form>
     </div>
 
     <div class="left-box">

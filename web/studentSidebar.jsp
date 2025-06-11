@@ -69,6 +69,7 @@
     <img class="logo" src="images/Logo UiTM- WHITE.png" alt="UiTM Logo" />
     <ul>
       <li><a href="studentDashboard.jsp">Dashboard</a></li>
+      <li><a href="Aprofile.jsp">Profile</a></li>
       <li><a href="studentEventList.jsp">Event List</a></li>
       <li><a href="studentRegisterEvent.jsp">Register for Event</a></li>
       <li><a href="studentCertificate.jsp">My Certificates</a></li>
@@ -77,6 +78,6 @@
     </ul>
   </div>
   <div class="bottom-links">
-    <a href="LogoutServlet" style="color:white; text-decoration:none; display:block; padding:10px;">Logout</a>
+    <a href="signoutController" style="color:white; text-decoration:none; display:block; padding:10px;">Logout</a>
   </div>
 </div>

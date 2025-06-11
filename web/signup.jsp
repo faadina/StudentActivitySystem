@@ -98,24 +98,40 @@
     <div class="left-box">
       <h2>Hello !</h2>
       <p>Already have an account?<br>Sign in now!</p>
-      <button onclick="window.location.href='login.jsp'">SIGN IN</button>
+      <button onclick="window.location.href='signin.jsp'">SIGN IN</button>
     </div>
 
     <div class="right-box">
       <h2>Sign up</h2>
-      <form action="registerController" method="post">
-      <form action="wrongURL" method="post">
+      
+            <!-- Error message -->
+      <%
+        String error = request.getParameter("error");
+        if ("pass_mismatch".equals(error)) {
+      %>
+          <div class="error-message">Passwords do not match.</div>
+      <%
+        } else if ("exists".equals(error)) {
+      %>
+          <div class="error-message">Email already exists.</div>
+      <%
+        }
+      %>
+      
+      <form action="signupController" method="post" onsubmit="return validatePassword()">
         <label>Role :</label>
         <div class="role-selection">
-          <label><input type="radio" name="role" value="club" checked> Club</label>
-          <label><input type="radio" name="role" value="staff"> Staff</label>
-          <label><input type="radio" name="role" value="student"> Student</label>
+          <label><input type="radio" name="role" value="organization" checked>Organization</label>
+          <label><input type="radio" name="role" value="staff">Staff</label>
+          <label><input type="radio" name="role" value="student">Student</label>
         </div>
+        
         <input type="text" name="name" placeholder="Name" required>
         <input type="email" name="email" placeholder="Email" required>
-        <input type="text" name="userid" placeholder="Phone No" required>
+        <input type="text" name="phone_no" placeholder="Phone No" required>
         <input type="password" name="password" placeholder="Password" required>
         <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+
         <input type="submit" value="SIGN UP">
       </form>
     </div>

@@ -126,7 +126,7 @@
 </head>
 <body>
 
-<jsp:include page="admSidebar.jsp" />
+<jsp:include page="adminSidebar.jsp" />
 
 <div class="main-content">
     <div class="container">
@@ -135,12 +135,12 @@
         </div>
 
         <div class="cards-container">
-            <div class="card" onclick="location.href='ADMINliststaff.jsp'">
+            <div class="card" onclick="location.href='adminListStaff.jsp'">
                 <h2>STAFF</h2>
                 <button class="view-btn" type="button">VIEW</button>
             </div>
 
-            <div class="card" onclick="location.href='ADMINlistclub.jsp'">
+            <div class="card" onclick="location.href='adminListClub.jsp'">
                 <h2>CLUB</h2>
                 <button class="view-btn" type="button">VIEW</button>
             </div>

@@ -68,13 +68,14 @@
     <div>
         <img class="logo" src="images/Logo UiTM- WHITE.png" alt="UiTM Logo" />
         <ul>
-            <li><a href="DashboardAdmin.jsp"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="AdminEventList.jsp"><i class="fas fa-calendar-alt"></i> Events</a></li>
-            <li><a href="UserManagementList.jsp"><i class="fas fa-users-cog"></i> User Management</a></li>
-            <li><a href="AdminReport.jsp"><i class="fas fa-file-alt"></i> Report</a></li>
+            <li><a href="adminDashboard.jsp"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="Aprofile.jsp">Profile</a></li>
+            <li><a href="adminEventList.jsp"><i class="fas fa-calendar-alt"></i> Events</a></li>
+            <li><a href="adminUserManagementList.jsp"><i class="fas fa-users-cog"></i> User Management</a></li>
+            <li><a href="adminReport.jsp"><i class="fas fa-file-alt"></i> Report</a></li>
         </ul>
     </div>
     <div class="bottom-links">
-        <a href="LogoutServlet"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="signoutController"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </div>
