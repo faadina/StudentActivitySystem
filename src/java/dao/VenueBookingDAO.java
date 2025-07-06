@@ -181,20 +181,22 @@ public class VenueBookingDAO {
         }
     }
     
-    public boolean cancelBooking(int bookingID) {
-        String sql = "UPDATE venue_booking SET status = 'cancelled', updatedAt = CURRENT_TIMESTAMP WHERE bookingID = ?";
-        
-        try (Connection conn = DatabaseConnection.getDBConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            stmt.setInt(1, bookingID);
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            System.err.println("Error cancelling booking: " + e.getMessage());
-            return false;
-        }
+ public boolean cancelBooking(int bookingID) {
+    String sql = "UPDATE venue_booking SET status = 'cancelled', updatedAt = CURRENT_TIMESTAMP WHERE bookingID = ?";
+
+    try (Connection conn = DatabaseConnection.getDBConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setInt(1, bookingID);
+        int rowsAffected = stmt.executeUpdate();
+        return rowsAffected > 0;
+
+    } catch (SQLException e) {
+        System.err.println("Error cancelling booking: " + e.getMessage());
+        return false;
     }
+}
+
     
     public boolean deleteBooking(int bookingID) {
         String sql = "DELETE FROM venue_booking WHERE bookingID = ?";

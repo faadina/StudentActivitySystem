@@ -32,7 +32,7 @@
                         <h6 id="progress-text">Step 1 of 3: Basic Information</h6>
                         <div class="progress" style="height: 10px;"><div class="progress-bar" id="progressBar" style="width: 33%;"></div></div>
                     </div>
-                    <form action="staff" method="post" id="addVenueForm">
+                    <form action="staff" method="post" id="addVenueForm" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="createVenue">
                         <div class="form-step active" id="step-1">
                             <div class="row">
@@ -52,8 +52,20 @@
                             <div class="mb-3"><label for="description" class="form-label">Description</label><textarea class="form-control" id="description" name="description" rows="5"></textarea></div>
                         </div>
                         <div class="form-step" id="step-3">
-                            <div class="mb-3"><label for="facilities" class="form-label">Facilities</label><input type="text" class="form-control" id="facilities" name="facilities"><div class="form-text">Use a comma to separate (e.g., Projector,Whiteboard,WiFi).</div></div>
-                            <div class="mb-3"><label for="imageUrl" class="form-label">Image URL</label><input type="url" class="form-control" id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg"></div>
+                          <div class="mb-3">
+                          <div class="mb-3">
+                            <label for="facilities" class="form-label">Facilities</label>
+                            <input type="text" class="form-control" id="facilities" name="facilities">
+                            <div class="form-text">Use commas (e.g., Projector, Whiteboard, WiFi).</div>
+                          </div>
+                            <label for="imageFile" class="form-label">Upload Image (PNG only)*</label>
+                            <input type="file"
+                                   class="form-control"
+                                   id="imageFile"
+                                   name="imageFile"
+                                   accept=".png,.jpg,.jpeg"
+                                   required>
+                          </div>
                         </div>
                         <div class="mt-4 d-flex justify-content-between">
                             <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">Previous</button>
@@ -71,18 +83,60 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let currentStep = 1; const totalSteps = 3;
-        const steps = document.querySelectorAll('.form-step');
-        const nextBtn = document.getElementById('nextBtn'); const prevBtn = document.getElementById('prevBtn'); const submitBtn = document.getElementById('submitBtn');
-        const progressBar = document.getElementById('progressBar'); const progressText = document.getElementById('progress-text');
-        function showStep(stepNumber) { steps.forEach(step => step.classList.remove('active')); document.getElementById(`step-${stepNumber}`).classList.add('active'); updateUI(stepNumber); }
-        function updateUI(stepNumber) { const progress = (stepNumber / totalSteps) * 100; progressBar.style.width = progress + '%'; if (stepNumber === 1) progressText.textContent = 'Step 1 of 3: Basic Information'; if (stepNumber === 2) progressText.textContent = 'Step 2 of 3: Specifications'; if (stepNumber === 3) progressText.textContent = 'Step 3 of 3: Additional Info'; prevBtn.style.display = stepNumber > 1 ? 'inline-block' : 'none'; nextBtn.style.display = stepNumber < totalSteps ? 'inline-block' : 'none'; submitBtn.style.display = stepNumber === totalSteps ? 'inline-block' : 'none'; }
-        function validateStep(stepNumber) { const currentStepDiv = document.getElementById(`step-${stepNumber}`); const inputs = currentStepDiv.querySelectorAll('input[required]'); for (let input of inputs) { if (!input.value.trim()) { alert('Please fill out all required fields.'); input.focus(); return false; } } return true; }
-        nextBtn.addEventListener('click', function() { if (validateStep(currentStep) && currentStep < totalSteps) { currentStep++; showStep(currentStep); } });
-        prevBtn.addEventListener('click', function() { if (currentStep > 1) { currentStep--; showStep(currentStep); } });
-        showStep(currentStep);
+document.addEventListener('DOMContentLoaded', () => {
+  const steps       = Array.from(document.querySelectorAll('.form-step'));
+  const nextBtn     = document.getElementById('nextBtn');
+  const prevBtn     = document.getElementById('prevBtn');
+  const submitBtn   = document.getElementById('submitBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressText= document.getElementById('progress-text');
+  let currentStep = 0;
+
+  function updateStep() {
+    // show only the active step
+    steps.forEach((step, idx) => {
+      step.classList.toggle('active', idx === currentStep);
     });
+    // update progress bar & text
+    const pct = ((currentStep + 1) / steps.length) * 100;
+    progressBar.style.width = pct + '%';
+    const labels = [
+      'Step 1 of 3: Basic Information',
+      'Step 2 of 3: Specifications',
+      'Step 3 of 3: Additional Info'
+    ];
+    progressText.textContent = labels[currentStep];
+    // show/hide nav buttons
+    prevBtn.style.display   = currentStep > 0                ? 'inline-block' : 'none';
+    nextBtn.style.display   = currentStep < steps.length-1   ? 'inline-block' : 'none';
+    submitBtn.style.display = currentStep === steps.length-1 ? 'inline-block' : 'none';
+  }
+
+  nextBtn.addEventListener('click', () => {
+    // validate required inputs in this step
+    const reqs = steps[currentStep].querySelectorAll('input[required]');
+    for (let inp of reqs) {
+      if (!inp.value.trim()) {
+        alert('Please fill out all required fields.');
+        inp.focus();
+        return;
+      }
+    }
+    currentStep++;
+    updateStep();
+  });
+
+  prevBtn.addEventListener('click', () => {
+    if (currentStep > 0) {
+      currentStep--;
+      updateStep();
+    }
+  });
+
+  // initialize
+  updateStep();
+});
 </script>
+
 </body>
 </html>

@@ -248,12 +248,16 @@ public class UserDAO {
         case "organization":
             prefix = "O";
             break;
+        case "student":      
+            prefix = "STU"; 
+            break; 
         default:
             return null; // Atau baling ralat
     }
 
     // SQL untuk mencari nombor maksimum bagi awalan (prefix) tertentu
-    String sql = "SELECT MAX(CAST(SUBSTRING(userID, " + (prefix.length() + 1) + ") AS UNSIGNED)) FROM user WHERE userID LIKE '" + prefix + "%'";
+     String sql = "SELECT MAX(CAST(SUBSTRING(userID,"+(prefix.length()+1)+") AS UNSIGNED)) "
+               + "FROM user WHERE userID LIKE '"+prefix+"%'";
     try (Connection conn = DatabaseConnection.getDBConnection();
          PreparedStatement stmt = conn.prepareStatement(sql);
          ResultSet rs = stmt.executeQuery()) {
@@ -272,5 +276,21 @@ public class UserDAO {
     }
 }
     
+    public int getTotalOrganizations() {
+    String sql = "SELECT COUNT(*) FROM user WHERE userRole = 'organization' AND userStatus = 'active'";
+    
+    try (Connection conn = DatabaseConnection.getDBConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql);
+         ResultSet rs = stmt.executeQuery()) {
+        
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+    } catch (SQLException e) {
+        System.err.println("Error getting total organizations: " + e.getMessage());
+        e.printStackTrace();
+    }
+    return 0;
+}
     
 }

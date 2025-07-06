@@ -28,7 +28,7 @@
 
             <div class="card">
                 <div class="card-body p-4">
-                    <form action="staff" method="post">
+                    <form action="staff" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="action" value="updateResource">
                         <input type="hidden" name="resourceID" value="${resource.resourceID}">
 
@@ -75,9 +75,10 @@
                             <textarea class="form-control" id="usageInstructions" name="usageInstructions" rows="3">${resource.usageInstructions}</textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="imageUrl" class="form-label">Image URL</label>
-                            <input type="url" class="form-control" id="imageUrl" name="imageUrl" value="${resource.imageUrl}">
-                        </div>
+                            <label for="imageFile">Replace Image</label>
+                            <input type="file" class="form-control" id="imageFile" name="imageFile"
+                                   accept=".png,.jpg,.jpeg">
+                          </div>
 
                         <div class="mt-4 text-end">
                             <a href="staff?action=resourceManagement" class="btn btn-secondary">Cancel</a>

@@ -5,13 +5,20 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
-import model.VenueBooking;
 
 public class VenueDAO {
-    
+        private final Connection conn;
+
+    public VenueDAO() {
+        // Obtain a persistent connection for the DAO
+        this.conn = DatabaseConnection.getDBConnection();
+    }
+
 
     public boolean createVenue(Venue venue) {
-        String sql = "INSERT INTO venue (venueName, building, floor, venueType, capacity, description, facilities, price, imageUrl, availability, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO venue (venueName, building, floor, venueType, "
+                + "capacity, description, facilities, price, imageUrl, availability, "
+                + "createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         try (Connection conn = DatabaseConnection.getDBConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -32,6 +39,8 @@ public class VenueDAO {
             return false;
         }
     }
+    
+    
 
     /**
      * Mengemas kini rekod venue sedia ada berdasarkan ID.
@@ -62,11 +71,7 @@ public class VenueDAO {
         }
     }
 
-    /**
-     * Memadam satu rekod venue berdasarkan ID.
-     * @param venueId ID untuk venue yang hendak dipadam.
-     * @return true jika berjaya, false jika gagal.
-     */
+
     public boolean deleteVenue(int venueId) {
         String sql = "DELETE FROM venue WHERE venueID = ?";
         try (Connection conn = DatabaseConnection.getDBConnection();

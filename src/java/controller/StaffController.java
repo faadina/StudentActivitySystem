@@ -1,6 +1,8 @@
 package controller;
 
+import static com.activity.util.DBConnection.getConnection;
 import dao.*;
+import java.io.File;
 import model.*;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -9,12 +11,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.http.Part;
 
 @WebServlet("/staff")
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024,        // 1MB sebelum ditulis ke disk
+    maxFileSize       = 5 * 1024 * 1024,    // max 5MB per fail
+    maxRequestSize    = 6 * 1024 * 1024     // max 6MB keseluruhan
+)
+
 public class StaffController extends HttpServlet {
 
     private VenueDAO venueDAO;
@@ -63,6 +80,7 @@ public class StaffController extends HttpServlet {
                     request.getRequestDispatcher("/staff/addVenue.jsp").forward(request, response); 
                     break;
                 case "showEditVenueForm": 
+                    request.getRequestDispatcher("/staff/editVenue.jsp").forward(request, response); 
                     showEditVenueForm(request, response); 
                     break;
                 case "showAddResourceForm": 
@@ -133,12 +151,33 @@ public class StaffController extends HttpServlet {
     }
 
     // --- Paparan Halaman (GET Methods) ---
-    private void showDashboard(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.setAttribute("pendingApprovals", venueBookingDAO.getBookingsByStatus("pending").size() + resourceBookingDAO.getBookingsByStatus("pending").size());
-        request.setAttribute("totalVenues", venueDAO.getAllVenues().size());
-        request.setAttribute("totalResources", resourceDAO.getAllResources().size());
-        request.getRequestDispatcher("/staff/dashboard.jsp").forward(request, response);
-    }
+private void showDashboard(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    
+    // 1. Ambil senarai tempahan yang sedang menunggu dari DAO
+    // Ini akan digunakan untuk paparan senarai dan juga untuk kiraan
+    List<VenueBooking> pendingVenueBookings = venueBookingDAO.getBookingsByStatus("pending");
+    List<ResourceBooking> pendingResourceBookings = resourceBookingDAO.getBookingsByStatus("pending");
+
+    // 2. Kira jumlah statistik berdasarkan saiz senarai yang diambil
+    int pendingApprovals = pendingVenueBookings.size() + pendingResourceBookings.size();
+    int totalVenues = venueDAO.getTotalVenues();
+    int totalResources = resourceDAO.getTotalResources();
+    
+    // 3. Hantar semua data yang diperlukan ke JSP
+    //    a. Statistik untuk kad di bahagian atas
+    request.setAttribute("pendingApprovals", pendingApprovals);
+    request.setAttribute("totalVenues", totalVenues);
+    request.setAttribute("totalResources", totalResources);
+    
+    //    b. Senarai penuh untuk dipaparkan dalam tab
+    request.setAttribute("pendingVenueBookings", pendingVenueBookings);
+    request.setAttribute("pendingResourceBookings", pendingResourceBookings);
+
+    // 4. Hantar ke paparan dashboard
+    request.getRequestDispatcher("/staff/dashboard.jsp").forward(request, response);
+}
+
     private void showVenueBookings(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String filter = request.getParameter("filter") == null ? "pending" : request.getParameter("filter");
         List<VenueBooking> bookings = "all".equalsIgnoreCase(filter) ? venueBookingDAO.getAllBookings() : venueBookingDAO.getBookingsByStatus(filter);
@@ -180,93 +219,130 @@ public class StaffController extends HttpServlet {
     request.getRequestDispatcher("/staff/profile.jsp").forward(request, response);
 }
 
-    // --- Logik Tindakan (POST Methods) ---
-private void createVenue(HttpServletRequest request) {
+private void createVenue(HttpServletRequest request) throws ServletException, IOException {
     HttpSession session = request.getSession();
     try {
-        // 1. Dapatkan semua parameter dari borang
+        // 1) read basic fields
+        String name        = request.getParameter("venueName");
+        String building    = request.getParameter("building");
+        String floor       = request.getParameter("floor");
+        String type        = request.getParameter("venueType");
+        int    capacity    = Integer.parseInt(request.getParameter("capacity"));
+        String description = request.getParameter("description");
+
+        // 2) parse facilities list
+        String facs = request.getParameter("facilities");
+        List<String> facilities = new ArrayList<>();
+        if (facs != null && !facs.trim().isEmpty()) {
+            facilities = Arrays.asList(facs.trim().split("\\s*,\\s*"));
+        }
+
+        BigDecimal depositRequired = new BigDecimal(request.getParameter("price"));
+
+
+        // 4) handle image upload…
+        Part filePart = request.getPart("imageFile");
+        String imageUrl = null;
+        if (filePart != null && filePart.getSize() > 0) {
+            String fileName = Paths.get(filePart.getSubmittedFileName())
+                                   .getFileName().toString().toLowerCase();
+            if (!(fileName.endsWith(".png") ||
+                  fileName.endsWith(".jpg") ||
+                  fileName.endsWith(".jpeg"))) {
+                session.setAttribute("error", "Only PNG/JPG images are allowed.");
+                return;
+            }
+            String uploadsDir = getServletContext().getRealPath("")
+                              + File.separator + "uploads"
+                              + File.separator + "venues";
+            File dir = new File(uploadsDir);
+            if (!dir.exists()) dir.mkdirs();
+            File dest = new File(dir, fileName);
+            try (InputStream in = filePart.getInputStream()) {
+                Files.copy(in, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+            imageUrl = "uploads/venues/" + fileName;
+        }
+
+        // 5) build model — pass depositRequired into price slot
+        Venue v = new Venue(
+          name, building, floor, type,
+          capacity, description, facilities,
+          depositRequired,    // ← now this is your deposit
+          imageUrl
+        );
+
+        // 6) persist
+        if (venueDAO.createVenue(v)) {
+            session.setAttribute("success", "Venue '" + name + "' added successfully.");
+        } else {
+            session.setAttribute("error", "Failed to add new venue.");
+        }
+
+    } catch (NumberFormatException ex) {
+        session.setAttribute("error", "Invalid number format for capacity or deposit.");
+        ex.printStackTrace();
+    } catch (Exception ex) {
+        session.setAttribute("error", "Error while adding venue: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
+
+
+
+
+    private void updateVenue(HttpServletRequest request) {
+    HttpSession session = request.getSession();
+    try {
+        int venueId = Integer.parseInt(request.getParameter("venueID"));
         String venueName = request.getParameter("venueName");
         String building = request.getParameter("building");
-        String floor = request.getParameter("floor");
-        String venueType = request.getParameter("venueType");
         int capacity = Integer.parseInt(request.getParameter("capacity"));
-        BigDecimal price = new BigDecimal(request.getParameter("price"));
-        String description = request.getParameter("description");
         String facilitiesStr = request.getParameter("facilities");
-        String imageUrl = request.getParameter("imageUrl");
 
-        // 2. Proses 'facilities' dari String kepada List
         List<String> facilities = new ArrayList<>();
         if (facilitiesStr != null && !facilitiesStr.trim().isEmpty()) {
-            // Pisahkan string menggunakan koma sebagai pembatas
-            facilities.addAll(Arrays.asList(facilitiesStr.split(",")));
+            facilities = new ArrayList<>(Arrays.asList(facilitiesStr.split(",")));
         }
 
-        // 3. Cipta objek Venue baharu menggunakan data dari borang
-        Venue newVenue = new Venue(venueName, building, floor, venueType, capacity, description, facilities, price, imageUrl);
+        // 👇 File upload logic
+        Part filePart = request.getPart("venueImage");
+        String imageUrl = null;
+        if (filePart != null && filePart.getSize() > 0) {
+            String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+            String uploadPath = request.getServletContext().getRealPath("/images");
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) uploadDir.mkdirs();
 
-        // 4. Panggil DAO untuk menyimpan ke pangkalan data
-        if (venueDAO.createVenue(newVenue)) {
-            session.setAttribute("success", "Venue '" + venueName + "' has been successfully added.");
+            File file = new File(uploadPath + File.separator + fileName);
+            filePart.write(file.getAbsolutePath());
+
+            imageUrl = "images/" + fileName;  // URL to use in <img src=...>
         } else {
-            session.setAttribute("error", "Failed to add the new venue. Please check the logs.");
+            // If no new image is uploaded, keep the old one
+            imageUrl = venueDAO.getVenueById(venueId).getImageUrl();
         }
-    } catch (NumberFormatException e) {
-        session.setAttribute("error", "Invalid number format for capacity or price.");
-        e.printStackTrace();
+
+        Venue venue = new Venue();
+        venue.setVenueID(venueId);
+        venue.setVenueName(venueName);
+        venue.setBuilding(building);
+        venue.setCapacity(capacity);
+        venue.setFacilities(facilities);
+        venue.setImageUrl(imageUrl);
+
+        if (venueDAO.updateVenue(venue)) {
+            session.setAttribute("success", "Venue #" + venueId + " updated successfully.");
+        } else {
+            session.setAttribute("error", "Failed to update venue #" + venueId + ".");
+        }
+
     } catch (Exception e) {
-        session.setAttribute("error", "An error occurred while adding the venue: " + e.getMessage());
+        session.setAttribute("error", "Error updating venue: " + e.getMessage());
         e.printStackTrace();
     }
 }
 
-    private void updateVenue(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        try {
-            // 1. Ambil semua data dari borang, termasuk ID
-            int venueId = Integer.parseInt(request.getParameter("venueID"));
-            String venueName = request.getParameter("venueName");
-            String building = request.getParameter("building");
-            String floor = request.getParameter("floor");
-            String venueType = request.getParameter("venueType");
-            int capacity = Integer.parseInt(request.getParameter("capacity"));
-            BigDecimal price = new BigDecimal(request.getParameter("price"));
-            String description = request.getParameter("description");
-            String facilitiesStr = request.getParameter("facilities");
-            String imageUrl = request.getParameter("imageUrl");
-            String availability = request.getParameter("availability");
-
-            // 2. Proses 'facilities' dari String kepada List
-            List<String> facilities = new ArrayList<>();
-            if (facilitiesStr != null && !facilitiesStr.trim().isEmpty()) {
-                facilities = new ArrayList<>(Arrays.asList(facilitiesStr.split(",")));
-            }
-
-            // 3. Cipta objek Venue dengan maklumat baharu
-            Venue venueToUpdate = new Venue();
-            venueToUpdate.setVenueID(venueId);
-            venueToUpdate.setVenueName(venueName);
-            venueToUpdate.setBuilding(building);
-            venueToUpdate.setFloor(floor);
-            venueToUpdate.setVenueType(venueType);
-            venueToUpdate.setCapacity(capacity);
-            venueToUpdate.setDescription(description);
-            venueToUpdate.setFacilities(facilities);
-            venueToUpdate.setPrice(price);
-            venueToUpdate.setImageUrl(imageUrl);
-            venueToUpdate.setAvailability(availability);
-
-            // 4. Panggil DAO untuk kemas kini pangkalan data
-            if (venueDAO.updateVenue(venueToUpdate)) {
-                session.setAttribute("success", "Venue #" + venueId + " has been updated successfully.");
-            } else {
-                session.setAttribute("error", "Failed to update venue #" + venueId + ".");
-            }
-        } catch (Exception e) {
-            session.setAttribute("error", "Error updating venue: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
 private void deleteVenue(HttpServletRequest request) {
     HttpSession session = request.getSession();
@@ -291,71 +367,96 @@ private void deleteVenue(HttpServletRequest request) {
 private void createResource(HttpServletRequest request) {
     HttpSession session = request.getSession();
     try {
-        // 1. Dapatkan semua data dari borang 'addResource.jsp'
-        String resourceName = request.getParameter("resourceName");
-        String category = request.getParameter("category");
-        String location = request.getParameter("location");
-        int totalQuantity = Integer.parseInt(request.getParameter("totalQuantity"));
-        String condition = request.getParameter("condition");
-        BigDecimal depositRequired = new BigDecimal(request.getParameter("depositRequired"));
-        String description = request.getParameter("description");
+        // 1) Ambil parameter lain
+        String resourceName      = request.getParameter("resourceName");
+        String category          = request.getParameter("category");
+        String location          = request.getParameter("location");
+        int    totalQuantity     = Integer.parseInt(request.getParameter("totalQuantity"));
+        String condition         = request.getParameter("condition");
+        String description       = request.getParameter("description");
         String usageInstructions = request.getParameter("usageInstructions");
-        String imageUrl = request.getParameter("imageUrl");
 
-        // 2. Cipta objek Resource baharu.
-        // Spesifikasi (Map) dibiarkan null buat masa ini kerana borang ringkas.
-        Resource newResource = new Resource(resourceName, category, description, location, 
-                                            totalQuantity, condition, depositRequired, 
-                                            imageUrl, null, usageInstructions);
+        // 2) Tangani upload fail imej
+        Part filePart = request.getPart("imageFile");
+        String imageUrl = null;
+        if (filePart != null && filePart.getSize() > 0) {
+            String fileName = Paths.get(filePart.getSubmittedFileName())
+                                   .getFileName().toString().toLowerCase();
+            if (!(fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".jpeg"))) {
+                session.setAttribute("error", "Hanya PNG/JPEG dibenarkan.");
+                return;
+            }
+            String uploadsPath = getServletContext().getRealPath("") + File.separator + "uploads";
+            File uploadsDir = new File(uploadsPath);
+            if (!uploadsDir.exists()) uploadsDir.mkdirs();
 
-        // 3. Panggil DAO untuk menyimpan
-        if (resourceDAO.createResource(newResource)) {
-            session.setAttribute("success", "Resource '" + resourceName + "' has been successfully added.");
-        } else {
-            session.setAttribute("error", "Failed to add the new resource.");
+            File file = new File(uploadsDir, fileName);
+            try (InputStream in = filePart.getInputStream()) {
+                Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+            imageUrl = "uploads/" + fileName;
         }
-    } catch (NumberFormatException e) {
-        session.setAttribute("error", "Invalid number format for quantity or deposit.");
-        e.printStackTrace();
+
+        // 3) Cipta model Resource
+        // Kalau constructor memerlukan deposit, pass BigDecimal.ZERO
+        Resource newResource = new Resource(
+            resourceName,
+            category,
+            description,
+            location,
+            totalQuantity,
+            condition,
+            BigDecimal.ZERO,          // <— tiada deposit
+            imageUrl,
+            null,
+            usageInstructions
+        );
+
+        // 4) Simpan via DAO
+        if (resourceDAO.createResource(newResource)) {
+            session.setAttribute("success", "Resource '" + resourceName + "' berjaya ditambah.");
+        } else {
+            session.setAttribute("error", "Gagal menambah resource baru.");
+        }
     } catch (Exception e) {
-        session.setAttribute("error", "An error occurred while adding the resource: " + e.getMessage());
+        session.setAttribute("error", "Error adding resource: " + e.getMessage());
         e.printStackTrace();
     }
 }
-    
-    private void updateResource(HttpServletRequest request) {
+
+private void updateResource(HttpServletRequest request) {
     HttpSession session = request.getSession();
     try {
-        // 1. Ambil ID dan semua data lain dari borang
         int resourceId = Integer.parseInt(request.getParameter("resourceID"));
-        String resourceName = request.getParameter("resourceName");
-        String category = request.getParameter("category");
-        String location = request.getParameter("location");
-        int totalQuantity = Integer.parseInt(request.getParameter("totalQuantity"));
-        String condition = request.getParameter("condition");
-        BigDecimal depositRequired = new BigDecimal(request.getParameter("depositRequired"));
-        String description = request.getParameter("description");
-        String usageInstructions = request.getParameter("usageInstructions");
-        String imageUrl = request.getParameter("imageUrl");
-
-        // 2. Dapatkan objek Resource sedia ada untuk dikemas kini
         Resource resourceToUpdate = resourceDAO.getResourceById(resourceId);
-        
+
         if (resourceToUpdate != null) {
-            // 3. Kemas kini setiap medan objek dengan data baharu
-            resourceToUpdate.setResourceName(resourceName);
-            resourceToUpdate.setCategory(category);
-            resourceToUpdate.setLocation(location);
-            resourceToUpdate.setTotalQuantity(totalQuantity);
-            // Nota: Logik untuk 'availableQuantity' mungkin perlu dikemas kini secara berasingan
-            resourceToUpdate.setCondition(condition);
-            resourceToUpdate.setDepositRequired(depositRequired);
-            resourceToUpdate.setDescription(description);
-            resourceToUpdate.setUsageInstructions(usageInstructions);
-            resourceToUpdate.setImageUrl(imageUrl);
-            
-            // 4. Panggil DAO untuk menyimpan perubahan
-            //    (Ini menganggap kaedah updateResource(resource) wujud dalam ResourceDAO)
+            // 1) First handle any new image upload
+            Part filePart = request.getPart("imageFile");
+            if (filePart != null && filePart.getSize() > 0) {
+                String fileName = Paths.get(filePart.getSubmittedFileName())
+                                       .getFileName().toString().toLowerCase();
+                // validate extension if you like…
+                String uploadsDir = getServletContext().getRealPath("") + File.separator + "uploads";
+                File dir = new File(uploadsDir);
+                if (!dir.exists()) dir.mkdirs();
+                File dest = new File(dir, fileName);
+                try (InputStream in = filePart.getInputStream()) {
+                    Files.copy(in, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                resourceToUpdate.setImageUrl("uploads/" + fileName);
+            }
+            // 2) Then update all the other fields
+            resourceToUpdate.setResourceName(request.getParameter("resourceName"));
+            resourceToUpdate.setCategory   (request.getParameter("category"));
+            resourceToUpdate.setLocation   (request.getParameter("location"));
+            resourceToUpdate.setTotalQuantity(Integer.parseInt(request.getParameter("totalQuantity")));
+            resourceToUpdate.setCondition  (request.getParameter("condition"));
+            resourceToUpdate.setDepositRequired(new BigDecimal(request.getParameter("depositRequired")));
+            resourceToUpdate.setDescription(request.getParameter("description"));
+            resourceToUpdate.setUsageInstructions(request.getParameter("usageInstructions"));
+
+            // 3) Persist
             if (resourceDAO.updateResource(resourceToUpdate)) {
                 session.setAttribute("success", "Resource #" + resourceId + " has been updated.");
             } else {
@@ -366,7 +467,6 @@ private void createResource(HttpServletRequest request) {
         }
     } catch (Exception e) {
         session.setAttribute("error", "Error updating resource: " + e.getMessage());
-        e.printStackTrace();
     }
 }
 
@@ -374,11 +474,9 @@ private void createResource(HttpServletRequest request) {
 private void deleteResource(HttpServletRequest request) {
     HttpSession session = request.getSession();
     try {
-        // 1. Dapatkan 'resourceId' dari borang
         int resourceId = Integer.parseInt(request.getParameter("resourceId"));
 
-        // 2. Panggil DAO untuk memadam
-        //    (Ini menganggap kaedah deleteResource(id) wujud dalam ResourceDAO)
+        // Panggil DAO untuk memadam
         if (resourceDAO.deleteResource(resourceId)) {
             session.setAttribute("success", "Resource #" + resourceId + " has been deleted.");
         } else {
@@ -386,7 +484,6 @@ private void deleteResource(HttpServletRequest request) {
         }
     } catch (Exception e) {
         session.setAttribute("error", "Error deleting resource: " + e.getMessage());
-        e.printStackTrace();
     }
 }
 
@@ -451,5 +548,6 @@ private void deleteResource(HttpServletRequest request) {
     } else {
         session.setAttribute("error", "Could not find user profile to update.");
     }
-}
+  }
+  
 }

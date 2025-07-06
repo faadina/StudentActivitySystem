@@ -61,6 +61,90 @@
         .status-approved { background-color: #d4edda; color: #155724; }
         .status-pending { background-color: #fff3cd; color: #856404; }
         .status-rejected { background-color: #f8d7da; color: #721c24; }
+        
+@media print {
+    /* Hide everything except the main content */
+    body * {
+        visibility: hidden;
+        background: white;
+    }
+    .main-content, .main-content * {
+        visibility: visible;
+    }
+    
+    /* Reset layout for printing */
+    .main-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Optimize card styling for print */
+    .details-card {
+        page-break-inside: avoid; /* Prevent cards from splitting across pages */
+        margin-bottom: 10px !important;
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    .card-header {
+        background-color: white !important;
+        border-bottom: 1px solid #000 !important;
+        padding: 5px 10px !important;
+    }
+    
+    .card-body {
+        padding: 10px !important;
+    }
+    
+    /* Hide unnecessary elements */
+    .btn, .sidebar, .page-header {
+        display: none !important;
+    }
+    
+    /* Optimize typography */
+    body {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+    }
+    
+    h2 {
+        font-size: 18px !important;
+        margin: 5px 0 !important;
+    }
+    
+    h4, h5, h6 {
+        font-size: 14px !important;
+        margin: 5px 0 !important;
+    }
+    
+    /* Compact list items */
+    .details-list li {
+        padding: 4px 0 !important;
+    }
+    
+    /* Status badge styling */
+    .status-badge {
+        background-color: white !important;
+        border: 1px solid #000 !important;
+        padding: 3px 8px !important;
+        font-size: 12px !important;
+    }
+    
+    /* Remove URL from print output */
+    a[href]:after {
+        content: none !important;
+    }
+    
+    /* Page setup */
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+}
     </style>
 </head>
 <body>
@@ -85,6 +169,9 @@
                                     <a href="${pageContext.request.contextPath}/organization?action=events" class="btn btn-outline-secondary me-2">
                                         <i class="fas fa-arrow-left me-2"></i>Back to Events
                                     </a>
+                                        <button onclick="window.print()" class="btn btn-outline-primary me-2">
+        <i class="fas fa-print me-2"></i>Print
+    </button>
                                     <c:if test="${event.eventStatus == 'pending' or event.eventStatus == 'rejected'}">
                                         <a href="${pageContext.request.contextPath}/organization?action=editEvent&id=${event.eventID}" class="btn btn-primary">
                                             <i class="fas fa-edit me-2"></i>Edit Event

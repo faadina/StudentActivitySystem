@@ -13,6 +13,16 @@
             background-color: #f8f9fa;
         }
         
+        .page-header {
+            background: white;
+            border-bottom: 1px solid #dee2e6;
+            padding: 20px 0; /* This padding makes it taller */
+            margin-bottom: 30px;
+        }
+
+    
+    
+        
         .card {
             border: none;
             border-radius: 15px;
@@ -140,14 +150,19 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10">
                 <!-- Top Navigation -->
-                <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+                <div class="page-header">
                     <div class="container-fluid">
-                        <h5 class="mb-0">
-                            <i class="fas fa-plus-circle me-2 text-primary"></i>
-                            Create New Event
-                        </h5>
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h2 class="mb-0">
+                                    <i class="fas fa-plus-circle me-2 text-primary"></i>
+                                    Create New Event
+                                </h2>
+                                <p class="text-muted mb-0">Fill in the details to create your new event</p>
+                            </div>
+                            </div>
                     </div>
-                </nav>
+                </div>
                 
                 <!-- Create Event Form -->
                 <div class="container-fluid">

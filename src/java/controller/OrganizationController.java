@@ -12,11 +12,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 @WebServlet("/organization")
 public class OrganizationController extends HttpServlet {
@@ -81,9 +80,6 @@ public class OrganizationController extends HttpServlet {
                 case "resources":
                     showResources(request, response);
                     break;
-                case "reports":
-                    showReports(request, response);
-                    break;
                 case "profile":
                     showProfile(request, response);
                     break;
@@ -146,6 +142,9 @@ public class OrganizationController extends HttpServlet {
                     break;
                 case "markResourceReturned":
                     markResourceReturned(request, response);
+                    break;
+                case "venueSchedule":
+                    showVenueSchedule(request, response);
                     break;
                 default:
                     showDashboard(request, response);
@@ -388,80 +387,250 @@ public class OrganizationController extends HttpServlet {
         }
     }
     
-    private void showVenues(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
+private void showVenues(HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException, IOException {
+
+    String userID = (String) request.getSession().getAttribute("userID");
+
+    // Get filter parameters
+    String date = request.getParameter("date");
+    String capacityStr = request.getParameter("capacity");
+    String building = request.getParameter("building");
+    String type = request.getParameter("type");
+    String status = request.getParameter("status");
+
+    Integer minCapacity = null;
+    if (capacityStr != null && !capacityStr.isEmpty()) {
+        minCapacity = Integer.parseInt(capacityStr);
+    }
+
+    // Pagination parameters
+    int page = request.getParameter("page") != null ? Integer.parseInt(request.getParameter("page")) : 1;
+    int pageSize = 5; // number of venues per page
+
+    // Get venues with filters (full list first)
+    List<Venue> allVenues = venueDAO.getVenuesWithFilters(minCapacity, building, type, status);
+
+    int totalVenuesFiltered = allVenues.size();
+    int totalPages = (int) Math.ceil((double) totalVenuesFiltered / pageSize);
+    int fromIndex = (page - 1) * pageSize;
+    int toIndex = Math.min(fromIndex + pageSize, totalVenuesFiltered);
+
+    List<Venue> venues = allVenues.subList(fromIndex, toIndex);
+
+    // Get statistics
+    int totalVenues = venueDAO.getTotalVenues();
+    int availableVenues = venueDAO.getAvailableVenuesCount();
+    int myBookings = venueBookingDAO.getBookingCountByUser(userID);
+    int upcomingBookings = venueBookingDAO.getUpcomingBookingCountByUser(userID);
+
+    // Get filter options
+    List<String> buildings = venueDAO.getAllBuildings();
+    List<Venue> availableVenuesList = venueDAO.getAvailableVenues();
+    List<VenueBooking> bookingHistory = venueBookingDAO.getBookingsByUser(userID);
+
+    // Get approved events for venue booking
+    List<Event> approvedEvents = eventDAO.getEventsByOrganizationAndStatus(userID, "approved");
+
+    // Set attributes
+    request.setAttribute("venues", venues);
+    request.setAttribute("totalVenues", totalVenues);
+    request.setAttribute("availableVenues", availableVenues);
+    request.setAttribute("myBookings", myBookings);
+    request.setAttribute("upcomingBookings", upcomingBookings);
+    request.setAttribute("buildings", buildings);
+    request.setAttribute("availableVenuesList", availableVenuesList);
+    request.setAttribute("bookingHistory", bookingHistory);
+    request.setAttribute("currentDate", new Date(System.currentTimeMillis()));
+    request.setAttribute("approvedEvents", approvedEvents);
+
+    // ADD pagination attributes
+    request.setAttribute("currentPage", page);
+    request.setAttribute("totalPages", totalPages);
+
+    request.getRequestDispatcher("/org/venues.jsp").forward(request, response);
+}
+
+
+private void bookVenue(HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException, IOException {
+    
+    String userID = (String) request.getSession().getAttribute("userID");
+    
+    try {
+        // Get form parameters
+        String bookingType = request.getParameter("bookingType");
+        String selectedEventID = request.getParameter("selectedEventID");
+        String venueIdStr = request.getParameter("venueId");
+        String eventType = request.getParameter("eventType");
+        String bookingDateStr = request.getParameter("bookingDate");
+        String startTimeStr = request.getParameter("startTime");
+        String endTimeStr = request.getParameter("endTime");
+        String purpose = request.getParameter("purpose");
+        String expectedAttendeesStr = request.getParameter("expectedAttendees");
+        String[] facilitiesRequired = request.getParameterValues("facilities");
         
-        String userID = (String) request.getSession().getAttribute("userID");
-        
-        // Get filter parameters
-        String date = request.getParameter("date");
-        String capacityStr = request.getParameter("capacity");
-        String building = request.getParameter("building");
-        String type = request.getParameter("type");
-        String status = request.getParameter("status");
-        
-        Integer minCapacity = null;
-        if (capacityStr != null && !capacityStr.isEmpty()) {
-            minCapacity = Integer.parseInt(capacityStr);
+        // Determine event details based on booking type
+        if ("existing".equals(bookingType) && selectedEventID != null && !selectedEventID.isEmpty()) {
+            // Use existing approved event
+            Event existingEvent = eventDAO.getEventById(selectedEventID);
+            if (existingEvent != null && "approved".equals(existingEvent.getEventStatus())) {
+                // Extract date and time from event
+                bookingDateStr = existingEvent.getEventDate().toString();
+                startTimeStr = existingEvent.getEventTime().toString();
+                
+                // Calculate end time (add 2 hours by default, or use event-specific logic)
+                Time startTime = existingEvent.getEventTime();
+                long endTimeMillis = startTime.getTime() + (2 * 60 * 60 * 1000); // Add 2 hours
+                Time endTime = new Time(endTimeMillis);
+                endTimeStr = endTime.toString();
+                
+                // Set event type based on event category
+                eventType = existingEvent.getEventCategory();
+                
+                // Use event title as part of purpose if not specified
+                if (purpose == null || purpose.trim().isEmpty()) {
+                    purpose = "Venue booking for event: " + existingEvent.getEventTitle();
+                }
+            } else {
+                request.setAttribute("error", "Selected event is not available or not approved.");
+                showVenues(request, response);
+                return;
+            }
         }
         
-        // Get venues with filters
-        List<Venue> venues = venueDAO.getVenuesWithFilters(minCapacity, building, type, status);
+        // Validate required fields
+        if (venueIdStr == null || eventType == null || bookingDateStr == null || 
+            startTimeStr == null || endTimeStr == null || purpose == null) {
+            request.setAttribute("error", "Please fill in all required fields.");
+            showVenues(request, response);
+            return;
+        }
         
-        // Get statistics
-        int totalVenues = venueDAO.getTotalVenues();
-        int availableVenues = venueDAO.getAvailableVenuesCount();
-        int myBookings = venueBookingDAO.getBookingCountByUser(userID);
-        int upcomingBookings = venueBookingDAO.getUpcomingBookingCountByUser(userID);
+        // Parse parameters
+        int venueId = Integer.parseInt(venueIdStr);
+        Date bookingDate = Date.valueOf(bookingDateStr);
+        Time startTime = Time.valueOf(startTimeStr);
+        Time endTime = Time.valueOf(endTimeStr);
+        int expectedAttendees = expectedAttendeesStr != null && !expectedAttendeesStr.isEmpty() 
+                              ? Integer.parseInt(expectedAttendeesStr) : 0;
         
-        // Get filter options
-        List<String> buildings = venueDAO.getAllBuildings();
-        List<Venue> availableVenuesList = venueDAO.getAvailableVenues();
-        List<VenueBooking> bookingHistory = venueBookingDAO.getBookingsByUser(userID);
+        // Validate time
+        if (!endTime.after(startTime)) {
+            request.setAttribute("error", "End time must be after start time.");
+            showVenues(request, response);
+            return;
+        }
         
-        request.setAttribute("venues", venues);
-        request.setAttribute("totalVenues", totalVenues);
-        request.setAttribute("availableVenues", availableVenues);
-        request.setAttribute("myBookings", myBookings);
-        request.setAttribute("upcomingBookings", upcomingBookings);
-        request.setAttribute("buildings", buildings);
-        request.setAttribute("availableVenuesList", availableVenuesList);
-        request.setAttribute("bookingHistory", bookingHistory);
-        request.setAttribute("currentDate", new Date(System.currentTimeMillis()));
+        // Check venue availability
+        if (!venueDAO.isVenueAvailable(venueId, bookingDate, startTime, endTime)) {
+            request.setAttribute("error", "Venue is not available for the selected date and time.");
+            showVenues(request, response);
+            return;
+        }
         
-        request.getRequestDispatcher("/org/venues.jsp").forward(request, response);
+        // Get venue details for pricing and validation
+        Venue venue = venueDAO.getVenueById(venueId);
+        if (venue == null) {
+            request.setAttribute("error", "Venue not found.");
+            showVenues(request, response);
+            return;
+        }
+        
+        // Validate capacity
+        if (expectedAttendees > venue.getCapacity()) {
+            request.setAttribute("warning", "Warning: Expected attendees (" + expectedAttendees + 
+                               ") exceeds venue capacity (" + venue.getCapacity() + "). Booking submitted for review.");
+        }
+        
+        // Create facilities list
+        List<String> facilitiesList = new ArrayList<>();
+        if (facilitiesRequired != null) {
+            for (String facility : facilitiesRequired) {
+                facilitiesList.add(facility);
+            }
+        }
+        
+        // Calculate total amount (price per hour * duration)
+        long durationInHours = calculateDurationInHours(startTime, endTime);
+        BigDecimal totalAmount = venue.getPrice().multiply(BigDecimal.valueOf(durationInHours));
+        
+        // Create booking
+        VenueBooking booking = new VenueBooking(venueId, userID, eventType, bookingDate,
+                                               startTime, endTime, purpose, expectedAttendees,
+                                               facilitiesList, totalAmount);
+        
+        // Add event reference if booking is linked to existing event
+        if ("existing".equals(bookingType) && selectedEventID != null) {
+            // You might want to add an eventID field to VenueBooking model
+            // booking.setEventID(selectedEventID);
+        }
+        
+        if (venueBookingDAO.createVenueBooking(booking)) {
+            String successMessage = "Venue booking request submitted successfully.";
+            if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                successMessage += " Total amount: RM " + totalAmount;
+            }
+            request.setAttribute("success", successMessage);
+        } else {
+            request.setAttribute("error", "Failed to create venue booking.");
+        }
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        request.setAttribute("error", "An error occurred while processing your booking: " + e.getMessage());
     }
+    
+    showVenues(request, response);
+}
     
     private void showVenueSchedule(HttpServletRequest request, HttpServletResponse response) 
         throws ServletException, IOException {
-        try {
-            int venueId = Integer.parseInt(request.getParameter("venueId"));
-            Venue venue = venueDAO.getVenueById(venueId);
-            List<VenueBooking> bookings = venueBookingDAO.getBookingsByVenue(venueId);
-
-            request.setAttribute("venue", venue);
-            request.setAttribute("bookings", bookings);
-
-            request.getRequestDispatcher("/org/venueSchedule.jsp").forward(request, response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "Could not retrieve schedule for the venue.");
-            showVenues(request, response);
+    try {
+        // 1. Get venueId from request
+        int venueId = Integer.parseInt(request.getParameter("venueId"));
+        
+        // 2. Fetch venue details
+        Venue venue = venueDAO.getVenueById(venueId);
+        if (venue == null) {
+            request.setAttribute("error", "Venue not found.");
+            response.sendRedirect(request.getContextPath() + "/organization?action=venues");
+            return;
         }
+        
+        // 3. Fetch bookings for this venue
+        List<VenueBooking> bookings = venueBookingDAO.getBookingsByVenue(venueId);
+        
+        // 4. Set attributes for JSP
+        request.setAttribute("venue", venue);
+        request.setAttribute("bookings", bookings);
+        
+        // 5. Forward to venueSchedule.jsp
+        request.getRequestDispatcher("/org/venueSchedule.jsp").forward(request, response);
+        
+    } catch (NumberFormatException e) {
+        request.setAttribute("error", "Invalid Venue ID.");
+        response.sendRedirect(request.getContextPath() + "/organization?action=venues");
+    } catch (Exception e) {
+        e.printStackTrace();
+        request.setAttribute("error", "Error loading schedule.");
+        response.sendRedirect(request.getContextPath() + "/organization?action=venues");
     }
+}
     
+   
     private void showResources(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
+
         String userID = (String) request.getSession().getAttribute("userID");
-        
+
         // Get filter parameters
         String category = request.getParameter("category");
         String search = request.getParameter("search");
         String availability = request.getParameter("availability");
         String location = request.getParameter("location");
         String sort = request.getParameter("sort");
-        
+
         // Get resources
         List<Resource> resources;
         if (search != null && !search.trim().isEmpty()) {
@@ -469,25 +638,29 @@ public class OrganizationController extends HttpServlet {
         } else {
             resources = resourceDAO.getResourcesWithFilters(category, availability, location, sort);
         }
-        
+
         // Get statistics
         int totalResources = resourceDAO.getTotalResources();
         int availableResources = resourceDAO.getAvailableResourcesCount();
         int myBookings = resourceBookingDAO.getBookingCountByUser(userID);
         int overdueItems = resourceBookingDAO.getOverdueBookingCount();
-        
+
         // Get category counts
         int audioVisualCount = resourceDAO.getResourceCountByCategory("audio-visual");
         int furnitureCount = resourceDAO.getResourceCountByCategory("furniture");
         int sportsCount = resourceDAO.getResourceCountByCategory("sports");
         int technologyCount = resourceDAO.getResourceCountByCategory("technology");
         int decorationsCount = resourceDAO.getResourceCountByCategory("decorations");
-        
+
         // Get filter options
         List<String> locations = resourceDAO.getAllLocations();
         List<Resource> availableResourcesList = resourceDAO.getAvailableResources();
         List<ResourceBooking> resourceBookings = resourceBookingDAO.getBookingsByUser(userID);
-        
+
+        // *** MISSING: Get approved events for resource booking form ***
+        List<Event> approvedEvents = eventDAO.getEventsByOrganizationAndStatus(userID, "approved");
+
+        // Set attributes
         request.setAttribute("resources", resources);
         request.setAttribute("totalResources", totalResources);
         request.setAttribute("availableResources", availableResources);
@@ -502,38 +675,13 @@ public class OrganizationController extends HttpServlet {
         request.setAttribute("availableResourcesList", availableResourcesList);
         request.setAttribute("resourceBookings", resourceBookings);
         request.setAttribute("currentDate", new Date(System.currentTimeMillis()));
-        
+
+        // *** MISSING: Set approved events attribute ***
+        request.setAttribute("approvedEvents", approvedEvents);
+
         request.getRequestDispatcher("/org/resources.jsp").forward(request, response);
     }
     
-private void showReports(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-
-    String userID = (String) request.getSession().getAttribute("userID");
-
-    // 1. Data untuk Kad Statistik
-    request.setAttribute("totalEvents", eventDAO.getEventCountByOrganization(userID));
-    request.setAttribute("totalParticipants", eventDAO.getTotalParticipantsByOrganization(userID));
-    request.setAttribute("venueBookings", venueBookingDAO.getBookingCountByUser(userID));
-    request.setAttribute("resourceBookings", resourceBookingDAO.getBookingCountByUser(userID));
-
-    // 2. Data untuk Carta Garis (Acara Mengikut Bulan)
-    Map<String, Integer> monthlyEventMap = eventDAO.getMonthlyEventCounts(userID);
-    request.setAttribute("monthlyEventLabels", convertListToStringJson(new ArrayList<>(monthlyEventMap.keySet())));
-    request.setAttribute("monthlyEventData", convertListToIntegerJson(new ArrayList<>(monthlyEventMap.values())));
-
-    // 3. Data untuk Carta Pai (Acara Mengikut Kategori)
-    Map<String, Integer> categoryDataMap = eventDAO.getEventCountByCategory(userID);
-    request.setAttribute("categoryLabels", convertListToStringJson(new ArrayList<>(categoryDataMap.keySet())));
-    request.setAttribute("categoryData", convertListToIntegerJson(new ArrayList<>(categoryDataMap.values())));
-
-    // 4. Data untuk Carta Bar (Tempahan Dewan Popular)
-    Map<String, Integer> venueBookingMap = venueBookingDAO.getVenueBookingCounts();
-    request.setAttribute("topVenueLabels", convertListToStringJson(new ArrayList<>(venueBookingMap.keySet())));
-    request.setAttribute("topVenueData", convertListToIntegerJson(new ArrayList<>(venueBookingMap.values())));
-
-    request.getRequestDispatcher("/org/reports.jsp").forward(request, response);
-}
     
     private void showProfile(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -580,53 +728,40 @@ private String convertListToIntegerJson(List<Integer> list) {
     json.append("]");
     return json.toString();
 }
-    private void getVenueDetails(HttpServletRequest request, HttpServletResponse response) 
-            throws IOException, ServletException {
+    private void getVenueDetails(HttpServletRequest request, HttpServletResponse response)
+        throws IOException {
 
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
+    response.setContentType("application/json");
+    response.setCharacterEncoding("UTF-8");
 
-        try {
-            int venueId = Integer.parseInt(request.getParameter("venueId"));
-            Venue venue = venueDAO.getVenueById(venueId);
+    try {
+        int venueId = Integer.parseInt(request.getParameter("venueId"));
+        Venue venue = venueDAO.getVenueById(venueId);
 
-            if (venue != null) {
-                // Menggunakan pendekatan yang lebih selamat untuk membina JSON
-                StringBuilder json = new StringBuilder();
-                json.append("{");
-                json.append("\"venueID\":").append(venue.getVenueID()).append(",");
-                json.append("\"venueName\":\"").append(escapeJson(venue.getVenueName())).append("\",");
-                json.append("\"building\":\"").append(escapeJson(venue.getBuilding())).append("\",");
-                json.append("\"floor\":\"").append(escapeJson(venue.getFloor())).append("\",");
-                json.append("\"venueType\":\"").append(escapeJson(venue.getVenueType())).append("\",");
-                json.append("\"capacity\":").append(venue.getCapacity()).append(",");
-                json.append("\"price\":").append(venue.getPrice()).append(",");
-                json.append("\"description\":\"").append(escapeJson(venue.getDescription())).append("\",");
-
-                // Membina array JSON untuk facilities
-                json.append("\"facilities\":[");
-                if (venue.getFacilities() != null && !venue.getFacilities().isEmpty()) {
-                    for (int i = 0; i < venue.getFacilities().size(); i++) {
-                        json.append("\"").append(escapeJson(venue.getFacilities().get(i))).append("\"");
-                        if (i < venue.getFacilities().size() - 1) {
-                            json.append(",");
-                        }
-                    }
-                }
-                json.append("],");
-
-                json.append("\"imageUrl\":\"").append(escapeJson(venue.getImageUrl())).append("\"");
-                json.append("}");
-
-                response.getWriter().write(json.toString());
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Venue not found.");
+        if (venue != null) {
+            // Assign default image if null or empty
+            if (venue.getImageUrl() == null || venue.getImageUrl().trim().isEmpty()) {
+                venue.setImageUrl(request.getContextPath() + "/images/default-venue.jpg");
             }
-        } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error retrieving venue details.");
-            e.printStackTrace();
+
+            // Use Gson to convert to JSON
+            Gson gson = new GsonBuilder().create();
+            String json = gson.toJson(venue);
+
+            System.out.println("Sending JSON: " + json);  // DEBUG
+            response.getWriter().write(json);
+        } else {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Venue not found.");
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error retrieving venue details.");
     }
+}
+
+
+
     
     private void getResourceDetails(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -668,90 +803,30 @@ private String convertListToIntegerJson(List<Integer> list) {
         response.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
     
-    private void bookVenue(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        String userID = (String) request.getSession().getAttribute("userID");
-        
-        try {
-            String venueIdStr = request.getParameter("venueId");
-            String eventType = request.getParameter("eventType");
-            String bookingDateStr = request.getParameter("bookingDate");
-            String startTimeStr = request.getParameter("startTime");
-            String endTimeStr = request.getParameter("endTime");
-            String purpose = request.getParameter("purpose");
-            String expectedAttendeesStr = request.getParameter("expectedAttendees");
-            String[] facilitiesRequired = request.getParameterValues("facilities");
-            
-            // Validate required fields
-            if (venueIdStr == null || eventType == null || bookingDateStr == null || 
-                startTimeStr == null || endTimeStr == null || purpose == null) {
-                request.setAttribute("error", "Please fill in all required fields.");
-                showVenues(request, response);
-                return;
-            }
-            
-            // Parse parameters
-            int venueId = Integer.parseInt(venueIdStr);
-            Date bookingDate = Date.valueOf(bookingDateStr);
-            Time startTime = Time.valueOf(startTimeStr + ":00");
-            Time endTime = Time.valueOf(endTimeStr + ":00");
-            int expectedAttendees = expectedAttendeesStr != null && !expectedAttendeesStr.isEmpty() 
-                                  ? Integer.parseInt(expectedAttendeesStr) : 0;
-            
-            // Create facilities list
-            List<String> facilitiesList = new ArrayList<>();
-            if (facilitiesRequired != null) {
-                for (String facility : facilitiesRequired) {
-                    facilitiesList.add(facility);
-                }
-            }
-            
-            // Check venue availability
-            if (!venueDAO.isVenueAvailable(venueId, bookingDate, startTime, endTime)) {
-                request.setAttribute("error", "Venue is not available for the selected date and time.");
-                showVenues(request, response);
-                return;
-            }
-            
-            // Get venue details for pricing
-            Venue venue = venueDAO.getVenueById(venueId);
-            if (venue == null) {
-                request.setAttribute("error", "Venue not found.");
-                showVenues(request, response);
-                return;
-            }
-            
-            // Calculate total amount (price per hour * duration)
-            long durationInHours = calculateDurationInHours(startTime, endTime);
-            BigDecimal totalAmount = venue.getPrice().multiply(BigDecimal.valueOf(durationInHours));
-            
-            // Create booking
-            VenueBooking booking = new VenueBooking(venueId, userID, eventType, bookingDate,
-                                                   startTime, endTime, purpose, expectedAttendees,
-                                                   facilitiesList, totalAmount);
-            
-            if (venueBookingDAO.createVenueBooking(booking)) {
-                request.setAttribute("success", "Venue booking request submitted successfully.");
-            } else {
-                request.setAttribute("error", "Failed to create venue booking.");
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            request.setAttribute("error", "An error occurred while processing your booking: " + e.getMessage());
-        }
-        
-        showVenues(request, response);
-    }
     
     private void bookResource(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
+
         String userID = (String) request.getSession().getAttribute("userID");
-        
+
         try {
+            // Handle both single and multiple resource selection
             String[] resourceIds = request.getParameterValues("resourceIds");
+            if (resourceIds == null || resourceIds.length == 0) {
+                // Fallback to single resourceId parameter
+                String singleResourceId = request.getParameter("resourceIds");
+                if (singleResourceId != null) {
+                    resourceIds = new String[]{singleResourceId};
+                }
+            }
+
+            if (resourceIds == null || resourceIds.length == 0) {
+                request.setAttribute("error", "Please select at least one resource.");
+                showResources(request, response);
+                return;
+            }
+
+            // Get form parameters
             String eventName = request.getParameter("eventName");
             String eventLocation = request.getParameter("eventLocation");
             String borrowDateStr = request.getParameter("borrowDate");
@@ -759,111 +834,202 @@ private String convertListToIntegerJson(List<Integer> list) {
             String purpose = request.getParameter("purpose");
             String contactPerson = request.getParameter("contactPerson");
             String contactPhone = request.getParameter("contactPhone");
-            
+            String selectedEventID = request.getParameter("selectedEventID"); // For existing events
+            String bookingType = request.getParameter("bookingType"); // "existing" or "new"
+
             // Validate required fields
-            if (resourceIds == null || eventName == null || eventLocation == null || 
-                borrowDateStr == null || returnDateStr == null || purpose == null) {
-                request.setAttribute("error", "Please fill in all required fields and select at least one resource.");
+            if (borrowDateStr == null || returnDateStr == null || purpose == null) {
+                request.setAttribute("error", "Please fill in all required fields.");
                 showResources(request, response);
                 return;
             }
-            
+
+            // Determine event details based on booking type
+            if ("existing".equals(bookingType) && selectedEventID != null && !selectedEventID.isEmpty()) {
+                // Use existing approved event
+                Event existingEvent = eventDAO.getEventById(selectedEventID);
+                if (existingEvent != null && "approved".equals(existingEvent.getEventStatus())) {
+                    eventName = existingEvent.getEventTitle();
+                    eventLocation = existingEvent.getEventLocation();
+                    contactPerson = existingEvent.getContactPerson();
+                    contactPhone = existingEvent.getContactPhone();
+                } else {
+                    request.setAttribute("error", "Selected event is not available or not approved.");
+                    showResources(request, response);
+                    return;
+                }
+            } else {
+                // New event booking - validate required fields
+                if (eventName == null || eventName.trim().isEmpty() ||
+                    eventLocation == null || eventLocation.trim().isEmpty() ||
+                    contactPerson == null || contactPerson.trim().isEmpty() ||
+                    contactPhone == null || contactPhone.trim().isEmpty()) {
+
+                    request.setAttribute("error", "Please fill in all required fields for new event booking.");
+                    showResources(request, response);
+                    return;
+                }
+            }
+
             // Parse dates
             Date borrowDate = Date.valueOf(borrowDateStr);
             Date returnDate = Date.valueOf(returnDateStr);
-            
+
             // Validate dates
             if (!returnDate.after(borrowDate)) {
                 request.setAttribute("error", "Return date must be after borrow date.");
                 showResources(request, response);
                 return;
             }
-            
+
+            // Check if borrow date is not in the past
+            Date today = new Date(System.currentTimeMillis());
+            if (borrowDate.before(today)) {
+                request.setAttribute("error", "Borrow date cannot be in the past.");
+                showResources(request, response);
+                return;
+            }
+
             boolean allBookingsSuccessful = true;
             BigDecimal totalDeposit = BigDecimal.ZERO;
-            
+            List<String> successfulBookings = new ArrayList<>();
+            List<String> failedBookings = new ArrayList<>();
+
             // Create booking for each selected resource
             for (String resourceIdStr : resourceIds) {
                 try {
                     int resourceId = Integer.parseInt(resourceIdStr);
                     Resource resource = resourceDAO.getResourceById(resourceId);
-                    
-                    if (resource == null || !resource.isAvailable()) {
-                        continue;
-                    }
-                    
-                    // Check if resource has available quantity
-                    if (!resourceDAO.hasAvailableQuantity(resourceId, 1)) {
-                        request.setAttribute("error", "Resource " + resource.getResourceName() + " is not available.");
+
+                    if (resource == null) {
+                        failedBookings.add("Resource ID " + resourceId + " not found");
                         allBookingsSuccessful = false;
                         continue;
                     }
-                    
+
+                    if (!resource.isAvailable()) {
+                        failedBookings.add(resource.getResourceName() + " is not available");
+                        allBookingsSuccessful = false;
+                        continue;
+                    }
+
+                    // Check if resource has available quantity
+                    if (!resourceDAO.hasAvailableQuantity(resourceId, 1)) {
+                        failedBookings.add(resource.getResourceName() + " is out of stock");
+                        allBookingsSuccessful = false;
+                        continue;
+                    }
+
+                    // Check for conflicting bookings
+                    if (resourceBookingDAO.hasConflictingBooking(resourceId, borrowDate, returnDate, 1, null)) {
+                        failedBookings.add(resource.getResourceName() + " is already booked for the selected dates");
+                        allBookingsSuccessful = false;
+                        continue;
+                    }
+
                     // Calculate deposit
                     BigDecimal depositAmount = resource.getDepositRequired() != null 
                                              ? resource.getDepositRequired() : BigDecimal.ZERO;
                     totalDeposit = totalDeposit.add(depositAmount);
-                    
+
                     // Create booking
                     ResourceBooking booking = new ResourceBooking(resourceId, userID, eventName, eventLocation,
                                                                 borrowDate, returnDate, 1, purpose,
                                                                 contactPerson, contactPhone, depositAmount);
-                    
-                    if (!resourceBookingDAO.createResourceBooking(booking)) {
+
+                    if (resourceBookingDAO.createResourceBooking(booking)) {
+                        successfulBookings.add(resource.getResourceName());
+
+                        // Update available quantity
+                        int newAvailableQuantity = resource.getAvailableQuantity() - 1;
+                        resourceDAO.updateAvailableQuantity(resourceId, newAvailableQuantity);
+                    } else {
+                        failedBookings.add(resource.getResourceName() + " - booking creation failed");
                         allBookingsSuccessful = false;
                     }
-                    
+
                 } catch (NumberFormatException e) {
+                    failedBookings.add("Invalid resource ID: " + resourceIdStr);
+                    allBookingsSuccessful = false;
+                } catch (Exception e) {
+                    failedBookings.add("Error processing resource ID " + resourceIdStr + ": " + e.getMessage());
                     allBookingsSuccessful = false;
                 }
             }
-            
-            if (allBookingsSuccessful) {
-                request.setAttribute("success", "Resource booking requests submitted successfully. Total deposit required: RM " + totalDeposit);
-            } else {
-                request.setAttribute("error", "Some resource bookings failed. Please try again.");
+
+            // Prepare result messages
+            StringBuilder resultMessage = new StringBuilder();
+
+            if (!successfulBookings.isEmpty()) {
+                resultMessage.append("Successfully booked: ").append(String.join(", ", successfulBookings));
+                if (totalDeposit.compareTo(BigDecimal.ZERO) > 0) {
+                    resultMessage.append(". Total deposit required: RM ").append(totalDeposit);
+                }
             }
-            
+
+            if (!failedBookings.isEmpty()) {
+                if (resultMessage.length() > 0) {
+                    resultMessage.append(" | ");
+                }
+                resultMessage.append("Failed bookings: ").append(String.join(", ", failedBookings));
+            }
+
+            if (allBookingsSuccessful && !successfulBookings.isEmpty()) {
+                request.setAttribute("success", resultMessage.toString());
+            } else if (!successfulBookings.isEmpty()) {
+                request.setAttribute("warning", resultMessage.toString());
+            } else {
+                request.setAttribute("error", resultMessage.toString());
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("error", "An error occurred while processing your booking: " + e.getMessage());
         }
-        
+
         showResources(request, response);
     }
     
-    private void cancelBooking(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        String bookingIdStr = request.getParameter("bookingId");
-        String bookingType = request.getParameter("type"); // "venue" or "resource"
-        
+   private void cancelBooking(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+
+    response.setContentType("application/json");
+    response.setCharacterEncoding("UTF-8");
+
+    String bookingIdStr = request.getParameter("bookingId");
+    String bookingType = request.getParameter("type");
+
+    System.out.println("🚨 Received cancel request - bookingId: " + bookingIdStr + ", type: " + bookingType);
+
+    try {
         if (bookingIdStr != null && bookingType != null) {
-            try {
-                int bookingId = Integer.parseInt(bookingIdStr);
-                boolean success = false;
-                
-                if ("venue".equals(bookingType)) {
-                    success = venueBookingDAO.cancelBooking(bookingId);
-                } else if ("resource".equals(bookingType)) {
-                    success = resourceBookingDAO.cancelBooking(bookingId);
-                }
-                
-                if (success) {
-                    response.getWriter().write("{\"success\": true, \"message\": \"Booking cancelled successfully.\"}");
-                } else {
-                    response.getWriter().write("{\"success\": false, \"message\": \"Failed to cancel booking.\"}");
-                }
-                
-            } catch (NumberFormatException e) {
-                response.getWriter().write("{\"success\": false, \"message\": \"Invalid booking ID.\"}");
+            int bookingId = Integer.parseInt(bookingIdStr);
+            boolean success = false;
+
+            if ("venue".equals(bookingType)) {
+                success = venueBookingDAO.cancelBooking(bookingId);
+            } else if ("resource".equals(bookingType)) {
+                success = resourceBookingDAO.cancelBooking(bookingId);
             }
+
+            System.out.println("✅ Booking cancel success: " + success);
+
+            response.getWriter().write("{\"success\": " + success +
+                    ", \"message\": \"" + (success
+                    ? "Booking cancelled successfully (ID: " + bookingId + ")"
+                    : "Failed to cancel booking.") + "\"}");
         } else {
+            System.out.println("❌ Missing parameters.");
             response.getWriter().write("{\"success\": false, \"message\": \"Missing required parameters.\"}");
         }
-        
-        response.setContentType("application/json");
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.getWriter().write("{\"success\": false, \"message\": \"Server error occurred.\"}");
     }
+}
+
+
+
     
     private void markResourceReturned(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -1039,6 +1205,7 @@ private String convertListToIntegerJson(List<Integer> list) {
         
         return (endMillis - startMillis) / (60 * 60 * 1000);
     }
+    
     
     private void updateProfile(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {

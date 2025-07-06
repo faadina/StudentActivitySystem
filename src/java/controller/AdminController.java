@@ -167,49 +167,59 @@ protected void doPost(HttpServletRequest request, HttpServletResponse response)
            }
 
 
-    private void updateProfile(HttpServletRequest request, HttpServletResponse response) 
-            throws IOException {
-        
-        HttpSession session = request.getSession();
-        String userID = (String) session.getAttribute("userID");
-        User user = userDAO.getUserById(userID);
-        if (user != null) {
-            // Bahagian untuk kemas kini nama dan nombor telefon
-            String userName = request.getParameter("userName");
-            String userPhoneNo = request.getParameter("userPhoneNo");
-
-            user.setUserName(userName); 
-            user.setUserPhoneNo(userPhoneNo); 
-            
-            boolean profileUpdated = userDAO.updateUser(user); 
-            if(profileUpdated) {
-                session.setAttribute("userName", userName); 
-                session.setAttribute("success", "Profile successfully updated.");
-            }
-
-            // Bahagian untuk kemas kini kata laluan
-            String currentPassword = request.getParameter("currentPassword");
-            String newPassword = request.getParameter("newPassword");
-
-            if (currentPassword != null && !currentPassword.isEmpty() && newPassword != null && !newPassword.isEmpty()) {
-                // Sahkan kata laluan semasa
-                User authUser = userDAO.authenticateUser(user.getUserEmail(), currentPassword);
-                if (authUser != null) {
-                    // Jika betul, kemas kini kepada kata laluan baharu
-                    boolean passwordUpdated = userDAO.updatePassword(userID, newPassword); 
-                    if (passwordUpdated) {
-                        session.setAttribute("success", "Profile and password updated successfully.");
-                    } else {
-                        session.setAttribute("error", "Failed to update password.");
-                    }
-                } else {
-                    // Jika kata laluan semasa salah
-                    session.setAttribute("error", "Incorrect current password.");
-                }
-            }
-        }
-
+private void updateProfile(HttpServletRequest request, HttpServletResponse response) 
+        throws ServletException, IOException {
+    HttpSession session = request.getSession(false);
+    if (session == null || !"admin".equals(session.getAttribute("userRole"))) {
+        response.sendRedirect(request.getContextPath() + "/login.jsp");
+        return;
     }
+
+    String userID = (String) session.getAttribute("userID");
+    User user = userDAO.getUserById(userID);
+    if (user == null) {
+        session.setAttribute("error", "User not found.");
+        response.sendRedirect(request.getContextPath() + "/admin?action=profile");
+        return;
+    }
+
+    // --- Update basic info ---
+    String userName  = request.getParameter("userName");
+    String userPhone = request.getParameter("userPhoneNo");
+    user.setUserName(userName);
+    user.setUserPhoneNo(userPhone);
+    boolean infoOk = userDAO.updateUser(user);
+    if (infoOk) {
+        session.setAttribute("userName", userName);  // keep session in sync
+        session.setAttribute("success", "Profile information updated.");
+    } else {
+        session.setAttribute("error", "Failed to update profile information.");
+    }
+
+    // --- Update password if provided ---
+    String currentPwd = request.getParameter("currentPassword");
+    String newPwd     = request.getParameter("newPassword");
+    if (currentPwd != null && !currentPwd.isEmpty()
+     && newPwd     != null && !newPwd.isEmpty()) {
+
+        // Verify current password
+        User authUser = userDAO.authenticateUser(user.getUserEmail(), currentPwd);
+        if (authUser != null) {
+            boolean pwdOk = userDAO.updatePassword(userID, newPwd);
+            if (pwdOk) {
+                session.setAttribute("success", "Password updated successfully.");
+            } else {
+                session.setAttribute("error", "Failed to update password.");
+            }
+        } else {
+            session.setAttribute("error", "Current password is incorrect.");
+        }
+    }
+
+    // Redirect back so doGet will load /admin?action=profile and show alerts
+    response.sendRedirect(request.getContextPath() + "/admin?action=profile");
+}
+
     
     private void showDashboard(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

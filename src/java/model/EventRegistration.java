@@ -1,6 +1,8 @@
 package model;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 
 public class EventRegistration {
@@ -14,6 +16,8 @@ public class EventRegistration {
     private String feedback;
     private int rating;
     private boolean certificateIssued;
+    private Date eventDate;   
+    private Time eventTime;  
 
     // For joined queries
     private String eventTitle;
@@ -187,5 +191,21 @@ public class EventRegistration {
                 ", paymentStatus='" + paymentStatus + '\'' +
                 ", certificateIssued=" + certificateIssued +
                 '}';
+    }
+    
+    public Date getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(Date eventDate) {
+        this.eventDate = eventDate;
+    }
+
+    public Time getEventTime() {
+        return eventTime;
+    }
+
+    public void setEventTime(Time eventTime) {
+        this.eventTime = eventTime;
     }
 }

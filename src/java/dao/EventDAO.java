@@ -418,4 +418,86 @@ public class EventDAO {
     return monthlyData;
 }
 
+    public List<Event> searchAndFilterEvents(String keyword, String category, String priceFilter) {
+    List<Event> events = new ArrayList<>();
+    // Gunakan StringBuilder untuk membina SQL secara dinamik
+    StringBuilder sql = new StringBuilder("SELECT * FROM event WHERE eventStatus = 'approved' AND eventDate >= CURDATE() ");
+    List<Object> params = new ArrayList<>();
+
+    // Tambah syarat carian jika keyword wujud
+    if (keyword != null && !keyword.trim().isEmpty()) {
+        sql.append("AND (eventTitle LIKE ? OR eventDescription LIKE ?) ");
+        params.add("%" + keyword + "%");
+        params.add("%" + keyword + "%");
+    }
+
+    // Tambah syarat penapisan jika kategori dipilih
+    if (category != null && !category.isEmpty() && !category.equalsIgnoreCase("All Categories")) {
+        sql.append("AND eventCategory = ? ");
+        params.add(category);
+    }
+
+    // Tambah syarat penapisan untuk bayaran
+    if ("free".equals(priceFilter)) {
+        sql.append("AND (registrationFee IS NULL OR registrationFee <= 0) ");
+    } else if ("paid".equals(priceFilter)) {
+        sql.append("AND registrationFee > 0 ");
+    }
+
+    sql.append("ORDER BY eventDate ASC");
+
+    try (Connection conn = DatabaseConnection.getDBConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+        
+        // Tetapkan parameter ke dalam PreparedStatement
+        for (int i = 0; i < params.size(); i++) {
+            stmt.setObject(i + 1, params.get(i));
+        }
+
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            // Gunakan kaedah helper sedia ada untuk ekstrak data
+            events.add(extractEventFromResultSet(rs));
+        }
+    } catch (SQLException e) {
+        System.err.println("Error searching and filtering events: " + e.getMessage());
+        e.printStackTrace();
+    }
+    return events;
+}
+    
+    public int getTotalParticipantsAllEvents() {
+    String sql = "SELECT COALESCE(SUM(registeredCount), 0) FROM event WHERE eventStatus = 'approved'";
+    
+    try (Connection conn = DatabaseConnection.getDBConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql);
+         ResultSet rs = stmt.executeQuery()) {
+        
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+    } catch (SQLException e) {
+        System.err.println("Error getting total participants for all events: " + e.getMessage());
+        e.printStackTrace();
+    }
+    return 0;
+}
+
+    public int getUpcomingEventsCount() {
+        String sql = "SELECT COUNT(*) FROM event WHERE eventStatus = 'approved' AND eventDate >= CURDATE()";
+
+        try (Connection conn = DatabaseConnection.getDBConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting upcoming events count: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
 }

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,448 +10,370 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
-            padding: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
         }
-        
-        .card {
-            border: none;
+
+        .auth-container {
+            background: white;
             border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            min-height: 500px;
         }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+
+        .auth-container .col-lg-5 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+
+        .auth-header {
+            background: transparent;
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+            position: relative;
         }
-        
-        .form-control, .form-select {
-            border-radius: 15px;
+
+        .auth-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .auth-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+            margin-bottom: 30px;
+        }
+
+        .auth-features {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .auth-features div {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .auth-form {
+            padding: 50px 40px;
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+        }
+
+        .form-floating .form-control {
             border: 2px solid #e9ecef;
-            padding: 12px 20px;
+            border-radius: 15px;
+            height: 60px;
+            font-size: 1rem;
             transition: all 0.3s ease;
         }
-        
-        .form-control:focus, .form-select:focus {
+
+        .form-floating .form-control:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        
-        .welcome-section {
+
+        .form-floating label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .btn-auth {
             background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 20px 0 0 20px;
-        }
-        
-        .logo-text {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        
-        .role-card {
-            border: 2px solid #e9ecef;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        
-        .role-card:hover {
-            border-color: #667eea;
-            transform: translateY(-5px);
-        }
-        
-        .role-card.selected {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        .role-card input[type="radio"] {
-            display: none;
-        }
-        
-        .alert {
-            border-radius: 15px;
             border: none;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn-auth:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-auth:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-auth:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 0.95rem;
+        }
+
+        .auth-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .auth-links a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .alert {
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .password-requirements {
+            margin-top: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            font-size: 0.85rem;
+        }
+
+        .password-requirements h6 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .password-requirements ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #6c757d;
+        }
+
+        .role-info {
+            margin-top: 15px;
+            padding: 12px 15px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border-left: 4px solid #2196f3;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .auth-container {
+                margin: 10px;
+                border-radius: 15px;
+                min-height: auto;
+            }
+            
+            .auth-header {
+                padding: 40px 25px;
+            }
+            
+            .auth-header h1 {
+                font-size: 2rem;
+            }
+            
+            .auth-form {
+                padding: 30px 25px;
+            }
+
+            .auth-container .row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10 col-xl-9">
-                <div class="card">
-                    <div class="row g-0">
-                        <!-- Welcome Section -->
-                        <div class="col-lg-5 d-none d-lg-block">
-                            <div class="welcome-section h-100 p-5 d-flex flex-column justify-content-center">
-                                <div class="text-center">
-                                    <i class="fas fa-university fa-4x mb-4"></i>
-                                    <div class="logo-text">Join UiTM!</div>
-                                    <p class="lead mb-4">
-                                        Create your account to start exploring amazing campus activities and connect with fellow students.
-                                    </p>
-                                    
-                                    <div class="mt-4">
-                                        <h6 class="mb-3">Benefits of joining:</h6>
-                                        <ul class="list-unstyled text-start">
-                                            <li class="mb-2">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                Access to exclusive events
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                Easy event registration
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                Digital certificates
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                Network with peers
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div class="mt-4">
-                                        <h6 class="mb-3">Already have an account?</h6>
-                                        <a href="signin.jsp" class="btn btn-outline-light btn-lg">
-                                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+    <div class="auth-container">
+        <div class="row g-0">
+            <!-- Left header/info -->
+            <div class="col-lg-5">
+                <div class="auth-header">
+                    <i class="fas fa-user-plus fa-3x mb-3"></i>
+                    <h1>Join UiTM</h1>
+                    <p>Create your student account</p>
+                    <div class="auth-features">
+                        <div><i class="fas fa-check-circle me-2"></i>Easy Registration</div>
+                        <div><i class="fas fa-check-circle me-2"></i>Secure Access</div>
+                        <div><i class="fas fa-check-circle me-2"></i>Event Participation</div>
+                        <div><i class="fas fa-check-circle me-2"></i>Resource Booking</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Signup form -->
+            <div class="col-lg-7">
+                <div class="auth-form">
+                    <h3 class="text-center mb-4 text-primary">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </h3>
+
+                    <!-- Error message -->
+                    <c:if test="${not empty error}">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>${error}
                         </div>
-                        
-                        <!-- Registration Form Section -->
-                        <div class="col-lg-7">
-                            <div class="p-5">
-                                <div class="text-center mb-4">
-                                    <h2 class="fw-bold text-primary">Create Account</h2>
-                                    <p class="text-muted">Fill in your details to get started</p>
-                                </div>
-                                
-                                <!-- Display Messages -->
-                                <c:if test="${not empty error}">
-                                    <div class="alert alert-danger" role="alert">
-                                        <i class="fas fa-exclamation-circle me-2"></i>
-                                        ${error}
-                                    </div>
-                                </c:if>
-                                
-                                <!-- Registration Form -->
-                                <form action="controller" method="post" class="needs-validation" novalidate id="signupForm">
-                                    <input type="hidden" name="action" value="signup">
-                                    
-                                    <!-- Role Selection -->
-                                    <div class="mb-4">
-                                        <label class="form-label">
-                                            <i class="fas fa-user-tag me-2"></i>Choose Your Role
-                                        </label>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="role-card" onclick="selectRole('student')">
-                                                    <input type="radio" name="role" value="student" id="student" required>
-                                                    <i class="fas fa-graduation-cap fa-2x text-primary mb-2"></i>
-                                                    <h6>Student</h6>
-                                                    <small class="text-muted">Register for events and activities</small>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="role-card" onclick="selectRole('organization')">
-                                                    <input type="radio" name="role" value="organization" id="organization" required>
-                                                    <i class="fas fa-users fa-2x text-success mb-2"></i>
-                                                    <h6>Organization</h6>
-                                                    <small class="text-muted">Create and manage events</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Personal Information -->
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-12">
-                                            <label for="name" class="form-label">
-                                                <i class="fas fa-user me-2"></i>Full Name
-                                            </label>
-                                            <input type="text" class="form-control" id="name" name="name" 
-                                                   placeholder="Enter your full name" required>
-                                            <div class="invalid-feedback">
-                                                Please enter your full name.
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <label for="email" class="form-label">
-                                                <i class="fas fa-envelope me-2"></i>Email Address
-                                            </label>
-                                            <input type="email" class="form-control" id="email" name="email" 
-                                                   placeholder="Enter your email address" required>
-                                            <div class="invalid-feedback">
-                                                Please enter a valid email address.
-                                            </div>
-                                            <div class="form-text">Use your UiTM email for verification</div>
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <label for="phone" class="form-label">
-                                                <i class="fas fa-phone me-2"></i>Phone Number
-                                            </label>
-                                            <input type="tel" class="form-control" id="phone" name="phone" 
-                                                   placeholder="Enter your phone number" required>
-                                            <div class="invalid-feedback">
-                                                Please enter your phone number.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Security Settings -->
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-12">
-                                            <label for="password" class="form-label">
-                                                <i class="fas fa-lock me-2"></i>Password
-                                            </label>
-                                            <div class="input-group">
-                                                <input type="password" class="form-control" id="password" name="password" 
-                                                       placeholder="Create a strong password" required minlength="6">
-                                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                            <div class="invalid-feedback">
-                                                Password must be at least 6 characters long.
-                                            </div>
-                                            <div class="form-text">Use at least 6 characters with a mix of letters and numbers</div>
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <label for="confirmPassword" class="form-label">
-                                                <i class="fas fa-lock me-2"></i>Confirm Password
-                                            </label>
-                                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" 
-                                                   placeholder="Confirm your password" required>
-                                            <div class="invalid-feedback">
-                                                Passwords do not match.
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-check mb-4">
-                                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                                        <label class="form-check-label" for="agreeTerms">
-                                            I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a> 
-                                            and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
-                                        </label>
-                                        <div class="invalid-feedback">
-                                            You must agree to the terms and conditions.
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-grid mb-3">
-                                        <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-user-plus me-2"></i>Create Account
-                                        </button>
-                                    </div>
-                                </form>
-                                
-                                <!-- Additional Links -->
-                                <div class="text-center mt-4">
-                                    <p class="text-muted mb-2">Already have an account?</p>
-                                    <a href="signin.jsp" class="btn btn-outline-primary">
-                                        <i class="fas fa-sign-in-alt me-2"></i>Sign In Instead
-                                    </a>
-                                </div>
-                                
-                                <div class="text-center mt-4">
-                                    <a href="index.jsp" class="text-decoration-none text-muted">
-                                        <i class="fas fa-arrow-left me-2"></i>Back to Home
-                                    </a>
-                                </div>
-                            </div>
+                    </c:if>
+
+                    <form action="${pageContext.request.contextPath}/controller" method="post" id="signupForm">
+                        <input type="hidden" name="action" value="signup">
+                        <input type="hidden" name="userRole" value="student">
+
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="userName" name="userName" placeholder="Full Name" required>
+                            <label for="userName"><i class="fas fa-id-card me-2"></i>Full Name</label>
                         </div>
+
+                        <div class="form-floating">
+                            <input type="email" class="form-control" id="userEmail" name="userEmail" placeholder="name@example.com" required>
+                            <label for="userEmail"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                        </div>
+
+                        <div class="form-floating">
+                            <input type="tel" class="form-control" id="userPhoneNo" name="userPhoneNo" placeholder="Phone Number">
+                            <label for="userPhoneNo"><i class="fas fa-phone me-2"></i>Phone Number (Optional)</label>
+                        </div>
+
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required minlength="6">
+                            <label for="password"><i class="fas fa-lock me-2"></i>Password</label>
+                        </div>
+
+                        <div class="password-requirements">
+                            <h6><i class="fas fa-info-circle me-1"></i>Password Requirements:</h6>
+                            <ul>
+                                <li>At least 6 characters long</li>
+                                <li>Use a mix of letters, numbers, and symbols</li>
+                                <li>Avoid common words or personal information</li>
+                            </ul>
+                        </div>
+
+                        <div class="role-info">
+                            <i class="fas fa-user-graduate me-2"></i>
+                            <strong>Student Account:</strong> You're creating a student account that will allow you to participate in events, book resources, and access university facilities.
+                        </div>
+
+                        <button type="submit" class="btn-auth" id="signupBtn">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </button>
+                    </form>
+
+                    <div class="auth-links">
+                        Already have an account? 
+                        <a href="${pageContext.request.contextPath}/login.jsp">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign in here
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Terms of Service Modal -->
-    <div class="modal fade" id="termsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-file-contract me-2"></i>Terms of Service
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>1. Acceptance of Terms</h6>
-                    <p>By accessing and using the UiTM Activity Management System, you accept and agree to be bound by the terms and provision of this agreement.</p>
-                    
-                    <h6>2. Use License</h6>
-                    <p>Permission is granted to temporarily access the system for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.</p>
-                    
-                    <h6>3. User Account</h6>
-                    <p>You are responsible for safeguarding your account credentials and for all activities that occur under your account.</p>
-                    
-                    <h6>4. Prohibited Uses</h6>
-                    <p>You may not use the system for any unlawful purpose or to solicit others to perform unlawful acts.</p>
-                    
-                    <h6>5. Contact Information</h6>
-                    <p>For questions about these Terms of Service, please contact us at admin@uitm.edu.my</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    <!-- Success popup & redirect -->
+    <c:if test="${param.success == 'true'}">
+        <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-check-circle me-2"></i>Registration Successful!
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5>Welcome to UiTM Activity Hub!</h5>
+                        <p>Your account has been created successfully. You will be redirected to the login page to sign in.</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Privacy Policy Modal -->
-    <div class="modal fade" id="privacyModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-shield-alt me-2"></i>Privacy Policy
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>Information We Collect</h6>
-                    <p>We collect information you provide directly to us, such as when you create an account, register for events, or contact us.</p>
-                    
-                    <h6>How We Use Your Information</h6>
-                    <p>We use the information we collect to provide, maintain, and improve our services, process transactions, and communicate with you.</p>
-                    
-                    <h6>Information Sharing</h6>
-                    <p>We do not share your personal information with third parties except as described in this policy or with your consent.</p>
-                    
-                    <h6>Data Security</h6>
-                    <p>We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.</p>
-                    
-                    <h6>Contact Us</h6>
-                    <p>If you have questions about this Privacy Policy, please contact us at admin@uitm.edu.my</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JavaScript -->
-    <script>
-        // Form validation
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                var forms = document.getElementsByClassName('needs-validation');
-                var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
-        
-        // Role selection
-        function selectRole(role) {
-            // Remove selected class from all role cards
-            document.querySelectorAll('.role-card').forEach(card => {
-                card.classList.remove('selected');
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                modal.show();
+                
+                // Animate progress bar
+                let progress = 0;
+                const progressBar = document.querySelector('.progress-bar');
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressBar.style.width = progress + '%';
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            window.location.href = '${pageContext.request.contextPath}/login.jsp';
+                        }, 500);
+                    }
+                }, 300);
             });
-            
-            // Add selected class to clicked card
-            event.target.closest('.role-card').classList.add('selected');
-            
-            // Check the radio button
-            document.getElementById(role).checked = true;
-        }
-        
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const password = document.getElementById('password');
-            const icon = this.querySelector('i');
-            
-            if (password.type === 'password') {
-                password.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                password.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
+        </script>
+    </c:if>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const signupBtn = document.getElementById('signupBtn');
+            signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            signupBtn.disabled = true;
         });
-        
-        // Real-time password confirmation validation
-        document.getElementById('confirmPassword').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            const confirmPassword = this.value;
+
+        // Password strength indicator
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
             
-            if (password !== confirmPassword) {
-                this.classList.add('is-invalid');
-                this.setCustomValidity('Passwords do not match');
-            } else {
-                this.classList.remove('is-invalid');
-                this.setCustomValidity('');
-            }
+            if (password.length >= 6) strength++;
+            if (password.match(/[a-z]/)) strength++;
+            if (password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            
+            this.style.borderColor = strength < 2 ? '#dc3545' : strength < 4 ? '#ffc107' : '#28a745';
         });
-        
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
+
+        // Auto-hide alerts
+        document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
-                if (alert.classList.contains('alert-success') || alert.classList.contains('alert-info')) {
-                    alert.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() {
                     alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.3s ease';
                     setTimeout(function() {
                         alert.remove();
-                    }, 500);
-                }
+                    }, 300);
+                }, 5000);
             });
-        }, 5000);
-        
-        // Add loading state to submit button
-        document.getElementById('signupForm').addEventListener('submit', function() {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
-            submitBtn.disabled = true;
-            
-            // Re-enable if form validation fails
-            setTimeout(function() {
-                if (!submitBtn.form.checkValidity()) {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }
-            }, 100);
         });
     </script>
 </body>

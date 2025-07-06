@@ -222,6 +222,7 @@ public class ResourceBookingDAO {
     public boolean cancelBooking(int bookingID) {
         String sql = "UPDATE resource_booking SET status = 'cancelled', updatedAt = CURRENT_TIMESTAMP WHERE bookingID = ?";
         
+        
         try (Connection conn = DatabaseConnection.getDBConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             

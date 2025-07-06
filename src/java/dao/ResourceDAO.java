@@ -10,6 +10,13 @@ import model.ResourceBooking;
 
 public class ResourceDAO {
     
+    private final Connection conn;
+
+    public ResourceDAO() {
+        // Ensure a live connection; DatabaseConnection can return a new or pooled connection
+        this.conn = DatabaseConnection.getDBConnection();
+    }
+    
     public boolean createResource(Resource resource) {
         String sql = "INSERT INTO resource (resourceName, category, description, location, totalQuantity, availableQuantity, `condition`, depositRequired, imageUrl, specifications, usageInstructions, availability, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', NOW(), NOW())";
         try (Connection conn = DatabaseConnection.getDBConnection();
