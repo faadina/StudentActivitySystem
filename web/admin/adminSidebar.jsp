@@ -5,67 +5,84 @@
 
 <style>
     .sidebar {
-        /* Latar belakang gradient ungu gelap */
-        background: linear-gradient(180deg, #58247D 0%, #3A1854 100%);
-        box-shadow: 3px 0 15px rgba(0,0,0,0.2);
-        
-        /* Susun atur Flexbox untuk menolak logout ke bawah */
+        background: linear-gradient(135deg, 
+#667eea 0%, 
+#764ba2 100%);
+        min-height: 100vh;
+        color: white;
+    }
+    .sidebar {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-
-        /* ======= PEMBETULAN DI SINI ======= */
-        min-height: 100vh; /* Pastikan sidebar sentiasa penuh tinggi skrin */
     }
+
     .sidebar .nav-link {
-        color: #d8bfd8;
-        padding: 13px 25px;
-        margin: 4px 0;
+        color: rgba(255, 255, 255, 0.85);
+        padding: 12px 20px;
         border-radius: 8px;
-        font-weight: 500;
-        transition: background-color 0.3s, color 0.3s, padding-left 0.3s;
-        border-left: 4px solid transparent; 
+        margin: 2px 0;
+        transition: all 0.3s ease;
     }
-
-    .sidebar .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.05);
-        color: #ffffff; 
-    }
-
+    .sidebar .nav-link:hover,
     .sidebar .nav-link.active {
-        background-color: rgba(255, 215, 0, 0.1);
-        color: #ffffff; 
-        font-weight: 700;
-        border-left: 4px solid #FFD700; /* Warna emas UiTM */
-        padding-left: 21px;
+        color: white;
+        background-color: rgba(255, 255, 255, 0.15);
+        transform: translateX(5px);
+    }
+    .sidebar h4 {
+        font-weight: bold;
+    }
+    .sidebar small {
+        font-size: 0.85rem;
+    }
+    .logout-section {
+        padding: 1rem 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: auto;
     }
     
-    .sidebar .sidebar-header h4 {
-        color: #ffffff;
-        font-weight: 600;
+    .logout-section .nav-link {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
     }
-    .sidebar .sidebar-header small {
-        color: #d8bfd8;
+    
+    .logout-section .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #ff6b6b;
+        transform: translateX(5px);
     }
-    .sidebar hr {
-        border-color: rgba(255, 255, 255, 0.15);
-        margin-left: 1rem;
-        margin-right: 1rem;
-    }
-    .sidebar .logout-section .nav-link:hover {
-        background-color: rgba(231, 76, 60, 0.2);
-        color: #ffffff;
+    
+        /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .sidebar {
+            position: relative;
+            width: 100%;
+            min-height: auto;
+        }
+        
+        .sidebar-content {
+            padding: 0.5rem;
+        }
+        
+        .main-nav {
+            padding-top: 0.5rem;
+        }
+        
+        .logout-section {
+            padding: 0.5rem 0;
+            margin-top: 1rem;
+        }
     }
 </style>
 
 <div class="sidebar">
     <div>
-        <div class="p-4 text-center sidebar-header">
-            <h4 class="text-white mb-0">
-                <i class="fas fa-cogs"></i> Admin Panel
-            </h4>
-            <small>Activity Management</small>
-        </div>
+    <div class="p-3 text-center">
+        <img src="${pageContext.request.contextPath}/images/Logo UiTM - Black.png" 
+             alt="UiTM Logo" 
+             class="img-fluid mb-2" 
+             style="max-width: 180px;">
+    </div>
         
         <nav class="nav flex-column px-3">
             <a class="nav-link ${param.active == 'dashboard' ? 'active' : ''}" href="admin?action=dashboard">
@@ -76,9 +93,6 @@
             </a>
             <a class="nav-link ${param.active == 'events' ? 'active' : ''}" href="admin?action=events">
                 <i class="fas fa-calendar-alt fa-fw me-2"></i> Event Management
-            </a>
-            <a class="nav-link ${param.active == 'systemReports' ? 'active' : ''}" href="admin?action=systemReports">
-                <i class="fas fa-chart-bar fa-fw me-2"></i> System Reports
             </a>
             <a class="nav-link ${param.active == 'profile' ? 'active' : ''}" href="admin?action=profile">
                 <i class="fas fa-user-cog fa-fw me-2"></i> Profile Settings

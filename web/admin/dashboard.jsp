@@ -88,7 +88,7 @@
                     </c:if>
 
                     <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="card dashboard-card stat-card">
                                 <div class="card-body text-center">
                                     <i class="fas fa-users fa-2x mb-3"></i>
@@ -103,7 +103,7 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="card dashboard-card stat-card success">
                                 <div class="card-body text-center">
                                     <i class="fas fa-calendar-check fa-2x mb-3"></i>
@@ -121,20 +121,8 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-3 mb-3">
-                            <div class="card dashboard-card stat-card warning">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-user-plus fa-2x mb-3"></i>
-                                    <h3 class="mb-1">${totalRegistrations}</h3>
-                                    <p class="mb-0">Total Registrations</p>
-                                    <small class="opacity-75">
-                                        <i class="fas fa-chart-line"></i> Activity Engagement
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
                         
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="card dashboard-card stat-card info">
                                 <div class="card-body text-center">
                                     <i class="fas fa-exclamation-circle fa-2x mb-3"></i>

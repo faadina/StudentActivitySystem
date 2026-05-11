@@ -402,7 +402,7 @@
                 </p>
             </div>
             <div class="hero-buttons">
-                <a href="${pageContext.request.contextPath}/signup.jsp" class="btn-hero primary">
+                <a href="${pageContext.request.contextPath}/login.jsp" class="btn-hero primary">
                     <i class="fas fa-rocket me-2"></i>Get Started
                 </a>
             </div>

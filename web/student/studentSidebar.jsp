@@ -3,7 +3,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <style>
     .sidebar {
-        background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         box-shadow: 3px 0 15px rgba(0,0,0,0.1);
         display: flex;
         flex-direction: column;
@@ -42,10 +42,12 @@
 </style>
 <div class="sidebar">
     <div>
-        <div class="p-4 text-center sidebar-header">
-            <h4 class="mb-0"><i class="fas fa-user-graduate"></i> Student Panel</h4>
-            <small>UiTM Activity System</small>
-        </div>
+    <div class="p-3 text-center">
+        <img src="${pageContext.request.contextPath}/images/Logo UiTM - Black.png" 
+             alt="UiTM Logo" 
+             class="img-fluid mb-2" 
+             style="max-width: 180px;">
+    </div>
         <nav class="nav flex-column px-3">
             <a class="nav-link ${param.active == 'dashboard' ? 'active' : ''}" href="${pageContext.request.contextPath}/student?action=dashboard"><i class="fas fa-tachometer-alt fa-fw me-2"></i> Dashboard</a>
             <a class="nav-link ${param.active == 'events' ? 'active' : ''}" href="${pageContext.request.contextPath}/student?action=events"><i class="fas fa-calendar-alt fa-fw me-2"></i> All Events</a>

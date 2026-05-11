@@ -1,5 +1,6 @@
 package dao;
 
+import com.google.gson.Gson;
 import model.Venue;
 import java.sql.*;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class VenueDAO {
             stmt.setString(4, venue.getVenueType());
             stmt.setInt(5, venue.getCapacity());
             stmt.setString(6, venue.getDescription());
-            stmt.setString(7, String.join(",", venue.getFacilities())); // Tukar List ke String
+            stmt.setString(7, new Gson().toJson(venue.getFacilities())); // Tukar List ke String
             stmt.setBigDecimal(8, venue.getPrice());
             stmt.setString(9, venue.getImageUrl());
             stmt.setString(10, "available"); // Status lalai
